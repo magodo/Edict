@@ -1,15 +1,12 @@
-~~~~~~~~~~~~~
-Dpendency:
-~~~~~~~~~~~~~
+##Dpendency:
+
 1. kivy
 2. numpy
 3. pyaudio
 
 
 
-~~~~~~~~~~~~~
-PROBLEM:
-~~~~~~~~~~~~~
+##PROBLEM:
 
 Configuration:
     In home directory, named .edictrc.py
