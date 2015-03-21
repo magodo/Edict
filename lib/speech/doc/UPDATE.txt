@@ -1,0 +1,29 @@
+#########
+# 02.07 #
+#########
+1. preprocess.py:
+   1.1 Optimize the calculation of zero-cross rate.
+   1.2 NIS and env_num are all related to the amount of frames now.
+
+2. mfcc.py:
+   2.1 mfcc.py have a new parameter called "appendEnergy", which will replace the first ceptral coefficient of each frame with the total frame energy when TRUE.
+   2.2 Before the log, modify zero to a very small float.
+   
+3. dtw.py:
+   3.1 Modify dtw process to a readable way.
+   3.2 Change the diagnal cost from 2 to 1.
+
+#########
+# 02.08 #
+#########
+1. preprocess.py:
+   1.1 Change the interface of end_point, return a list of start-end point pairs.
+   1.2 Adapt amp2, amp1, zcr2 threshold. 
+   1.3 Add a new function after end point detection which is used to choose one speech segment from the result of EDP if the segment amount is more or less than one.
+   1.4 Modify the shower function to show more information(threshold).
+
+#########
+# 02.09 #
+#########
+1. preprocess.py:
+   1.1 End-point detection, when determine start point, extend it with the prepending silence segment.
