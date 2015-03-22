@@ -11,16 +11,12 @@
 import os
 import sys
 
-# Configure sys.path to include edict package
-sys.path.append(os.path.abspath(os.path.join(os.path.curdir, os.path.pardir)))
-
 import threading
 import numpy
 
-from edict.lib.base.core import get_conf, BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
-from edict.lib.speech.mfcc import mfcc
-from edict.lib.speech.dtw import dtw
-from edict.lib.speech.waveio import keep_record, echo
+from lib.base.core import get_conf, BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
+from lib.speech.mfcc import mfcc
+from lib.speech.dtw import dtw
 
 import kivy
 import kivy.resources
@@ -45,9 +41,10 @@ kivy.require("1.8.0")
 #######################
 # Configuration
 #######################
-get_conf(globals())
+OFFLINE_IDX_PATH = os.path.join("dict_collections", "langdao-ec-gb.idx")
+OFFLINE_DICT_PATH = os.path.join("dict_collections", "langdao-ec-gb.dict")
 __personal_dict___ = os.path.abspath(os.path.join(os.path.curdir, 'personal_dict.pkl'))
-__font__ = r"fonts/DroidSansFallback.ttf"
+__font__ = os.path.join("fonts", "DroidSansFallback.ttf")
 
 #######################
 #   Widgets           #
@@ -117,7 +114,9 @@ class SampleButton(Button):
     def startRecord(self):
         def t_startRecord():
             print "recording..."
-            self.data = keep_record(self.stop_dict)
+            #self.data = keep_record(self.stop_dict)
+            self.data = [1,2,3]
+            #FIXME
             self.is_stopped = True
         t = threading.Thread(target = t_startRecord)
         t.start()
@@ -132,7 +131,8 @@ class SampleButton(Button):
         self.is_stopped = False
 
     def popupChoose(self):
-        echo(self.data)
+        #echo(self.data)
+        #FIXME
         p = CollChooseView(wave = self.data, target = self.target, last_view = self.parent.parent)
         p.open()
 
