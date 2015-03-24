@@ -202,16 +202,20 @@
             pos_hint: {'center_x': .5, 'center_y': .8}
 
         ReferTextInput:
-            coll_button: coll_button
-            show_label: show_label
 
             id: refer_textinput
             pos_hint: {'center_x': .5, 'center_y': .6}
             size_hint: (.4, .06)
             multiline: False
             
-            on_text: self.coll_button.disabled = True
-            on_text_validate: self.offlinerefer(app.offline_dict, self.text)
+            on_text: coll_button.disabled = True
+            on_text_validate: 
+                meaning = self.offlinerefer(app.offline_dict, self.text)
+                if meaning: \
+                show_label.text = meaning; \
+                coll_button.disabled = False
+                else: \
+                show_label.text = "No such word found: %s" %self.text
 
         ScrollView:
             id: scroll_view
@@ -259,14 +263,19 @@
             pos_hint: {'center_x': .5, 'center_y': .8}
 
         ReferTextInput:
-            show_label: show_label
 
             id: refer_textinput
             pos_hint: {'center_x': .5, 'center_y': .6}
             size_hint: (.4, .06)
             multiline: False
             
-            on_text_validate: self.personalrefer(app.personal_dict, self.text)
+            on_text_validate: 
+                meaning = self.personalrefer(app.personal_dict, self.text)
+                if meaning: \
+                show_label.text = meaning
+                else: \
+                show_label.text = "No such word found: %s" %self.text
+
 
         ScrollView:
             id: scroll_view

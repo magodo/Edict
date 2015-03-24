@@ -58,25 +58,24 @@ __font__ = r"fonts/DroidSansFallback.ttf"
 #----------------------
 class ReferTextInput(TextInput):
 
-    show_label = ObjectProperty()
-    coll_button = ObjectProperty()
+    def __init__(self, **kargs):
+        super(ReferTextInput, self).__init__(**kargs)
 
     def offlinerefer(self, offline_dict, word):
+        """Return meaning for a word from offline dict"""
         meaning = offline_refer(offline_dict, word.strip())
         if meaning:
-            self.show_label.text = meaning
-            # Only after a word has meaning, then user could choose to collect this word
-            self.coll_button.disabled = False
+            return meaning
         else:
-            self.show_label.text = "No translation for word: %s" %word
+            return None
 
     def personalrefer(self, personal_dict, word):
+        """Return meaning for a word from personal dict"""
         meaning = personal_refer(personal_dict, word.strip())
         if meaning:
-            self.show_label.text = meaning
+            return meaning
         else:
-            self.show_label.text = "No translation for word: %s" %word
-
+            return None
 
 #----------------------
 # Label
@@ -84,18 +83,20 @@ class ReferTextInput(TextInput):
 class ChineseLabel(Label):
     def __init__(self, **kargs):
         # Show Chinese
-        self.font_name = kivy.resources.resource_find(__font__)
         super(ChineseLabel, self).__init__(**kargs)
+        self.font_name = kivy.resources.resource_find(__font__)
 
 #----------------------
 # Buttons
 #----------------------
 class CollButton(Button):
 
+    def __init__(self, **kargs):
+        super(CollButton, self).__init__(**kargs)
+        self.disabled = True
+
     def show_view(self, word, meaning, personal_dict):
         """Show ModalView depends on if obj is True(word to collect), or False(Non word)"""
-
-        self.disabled = True
         word = word.strip()
         if word in personal_dict.keys():
             # Exist
