@@ -127,9 +127,10 @@
             pos_hint: {"center_x": .5, "center_y": .5}
             do_scroll_x: False
 
-            ChineseLabel:
+            Label:
                 text: root.target.meaning
 
+                font_name: app.font_name
                 font_size: 20
                 text_size: (self.parent.width, None)  
 
@@ -157,7 +158,7 @@
 #####################
 #  Buttons          #
 #####################
-<ListWordButton>:
+<WordButton>:
     on_release: self.show(app.personal_dict[self.text])
 
 #####################
@@ -166,198 +167,176 @@
 
 <HomeScreen>:
 
-    FloatLayout:
+    Button:
+        text: "Off-Line Dict"
+        size_hint: (.3, .2)
+        pos_hint: {'center_x': .7, 'center_y': .4}
+        on_press: 
+            root.manager.transition.direction = "left"
+            root.manager.current = "offline"
 
-        Button:
-            text: "Off-Line Dict"
-            size_hint: (.3, .2)
-            pos_hint: {'center_x': .7, 'center_y': .4}
-            on_press: 
-                root.manager.transition.direction = "left"
-                root.manager.current = "offline"
+    Button:
+        text: "Personal Dict"
+        size_hint: (.3, .2)
+        pos_hint: {'center_x': .3, 'center_y': .4}
+        on_press: 
+            root.manager.transition.direction = "left"
+            root.manager.current = "personal"
 
-        Button:
-            text: "Personal Dict"
-            size_hint: (.3, .2)
-            pos_hint: {'center_x': .3, 'center_y': .4}
-            on_press: 
-                root.manager.transition.direction = "left"
-                root.manager.current = "personal"
-
-        Label:
-            text: 'Edict'
-            font_size: 35
-            bold: True
-            pos_hint: {'center_x': .5, 'center_y': .8}
+    Label:
+        text: 'Edict'
+        font_size: 35
+        bold: True
+        pos_hint: {'center_x': .5, 'center_y': .8}
 
 
 <OffLineScreen>:
 
-    FloatLayout:
+    textinput: textinput
+    show_label: show_label
+    coll_button: coll_button
 
-        Label: 
-            text: "Off-line Mode"
-            font_size: 35
-            bold: True
-            pos_hint: {'center_x': .5, 'center_y': .8}
+    Label: 
+        text: "Off-line Mode"
+        font_size: 35
+        bold: True
+        pos_hint: {'center_x': .5, 'center_y': .8}
 
-        ReferTextInput:
-
-            id: refer_textinput
-            pos_hint: {'center_x': .5, 'center_y': .6}
-            size_hint: (.4, .06)
-            multiline: False
-            
-            on_text: coll_button.disabled = True
-            on_text_validate: 
-                meaning = self.offlinerefer(app.offline_dict, self.text)
-                if meaning: \
-                show_label.text = meaning; \
-                coll_button.disabled = False
-                else: \
-                show_label.text = "No such word found: %s" %self.text
-
-        ScrollView:
-            id: scroll_view
-            pos_hint: {'center_x': .5, 'center_y': .25}
-            size_hint: (.4, .4)
-            do_scroll_x: False
-            
-            ChineseLabel:
-                id: show_label
-                text: '' 
-                font_size: 20
-                size_hint: (None, None)
-                text_size: (self.parent.width, None)
-                size: (self.parent.width, self.texture_size[1])
-                
-        CollButton:
-            refer_textinput: refer_textinput
-            show_label: show_label
-
-            id: coll_button
-            pos_hint: {'center_x': .85, 'center_y': .6}
-            size_hint: (.1, .06)
-            text: "Collect"
-            disabled: True
-
-            on_press:
-                self.show_view(self.refer_textinput.text, self.show_label.text, app.personal_dict)
+    TextInput:
+        id: textinput
+        pos_hint: {'center_x': .5, 'center_y': .6}
+        size_hint: (.4, .06)
+        multiline: False
         
-        Button:
-            text: "Back"
-            pos_hint: {'center_x': .1, 'center_y': .1}
-            size_hint: (.1, .1)
-            on_press: 
-                root.manager.transition.direction = "right"
-                root.manager.current = "home"
+        on_text: root.coll_button.disabled = True
+        on_text_validate: root.offlinerefer(app.offline_dict, self.text)
+
+    ScrollView:
+        id: scroll_view
+        pos_hint: {'center_x': .5, 'center_y': .25}
+        size_hint: (.4, .4)
+        do_scroll_x: False
+        
+        Label:
+            id: show_label
+            text: '' 
+            font_name: app.font_name
+            font_size: 20
+            size_hint: (None, None)
+            text_size: (self.parent.width, None)
+            size: (self.parent.width, self.texture_size[1])
+            
+    Button:
+        id: coll_button
+        pos_hint: {'center_x': .85, 'center_y': .6}
+        size_hint: (.1, .06)
+        disabled: True
+        text: "Collect"
+        disabled: True
+
+        on_press:
+            root.show_view(app.personal_dict)
+    
+    Button:
+        text: "Back"
+        pos_hint: {'center_x': .1, 'center_y': .1}
+        size_hint: (.1, .1)
+        on_press: 
+            root.manager.transition.direction = "right"
+            root.manager.current = "home"
 
 <PersonalScreen>:
 
-    FloatLayout:
+    textinput: textinput
+    show_label: show_label
+    sample_button: sample_button
 
-        Label: 
-            text: "Personal Mode"
-            font_size: 35
-            bold: True
-            pos_hint: {'center_x': .5, 'center_y': .8}
+    Label: 
+        text: "Personal Mode"
+        font_size: 55
+        bold: True
+        pos_hint: {'center_x': .5, 'center_y': .8}
 
-        ReferTextInput:
+    TextInput:
+        id: textinput
+        pos_hint: {'center_x': .5, 'center_y': .6}
+        size_hint: (.4, .06)
+        multiline: False
 
-            id: refer_textinput
-            pos_hint: {'center_x': .5, 'center_y': .6}
-            size_hint: (.4, .06)
-            multiline: False
+        on_text_validate: root.personalrefer(app.personal_dict, self.text)
+
+    ScrollView:
+        id: scroll_view
+        pos_hint: {'center_x': .5, 'center_y': .25}
+        size_hint: (.4, .4)
+        do_scroll_x: False
+        
+        Label:
+            id: show_label
+            text: '' 
+            font_name: app.font_name
+            font_size: 20
+            size_hint: (None, None)
+            text_size: (self.parent.width, None)
+            size: (self.parent.width, self.texture_size[1])
             
-            on_text_validate: 
-                meaning = self.personalrefer(app.personal_dict, self.text)
-                if meaning: \
-                show_label.text = meaning
-                else: \
-                show_label.text = "No such word found: %s" %self.text
+    Button:
+        text: "Back"
+        pos_hint: {'center_x': .1, 'center_y': .1}
+        size_hint: (.1, .1)
+        on_press: 
+            root.manager.transition.direction = "right"
+            root.manager.current = "home"
 
+    Button:
+        text: "Manage"
+        pos_hint: {"center_x": .8, "center_y": .3}
+        size_hint: (.1, .06)
+        on_press:
+            root.manager.transition = FadeTransition()
+            root.manager.current = "manager"
 
-        ScrollView:
-            id: scroll_view
-            pos_hint: {'center_x': .5, 'center_y': .25}
-            size_hint: (.4, .4)
-            do_scroll_x: False
-            
-            ChineseLabel:
-                id: show_label
-                text: '' 
-                font_size: 20
-                size_hint: (None, None)
-                text_size: (self.parent.width, None)
-                size: (self.parent.width, self.texture_size[1])
-                
-                
-        Button:
-            text: "Back"
-            pos_hint: {'center_x': .1, 'center_y': .1}
-            size_hint: (.1, .1)
-            on_press: 
-                root.manager.transition.direction = "right"
-                root.manager.current = "home"
+    SampleButton:
 
-        Button:
-            text: "Manage"
-            pos_hint: {"center_x": .8, "center_y": .3}
-            size_hint: (.1, .06)
-            on_press:
-                root.manager.transition = FadeTransition()
-                root.manager.current = "manager"
-
-        SampleButton:
-            show_label: show_label
-
-            text: "Refer"
-            pos_hint: {"center_x": .8, "center_y": .6}
-            size_hint: (.1, .06)
-            on_press:
-                self.startRecord()
-            on_release:
-                self.stopRecord()
-                match = self.refer(app.personal_dict)
-                if match: \
-                self.show_label.text = app.personal_dict[match].meaning
-                else: \
-                self.show_label.text = "No voiced word in Personal dictionary!"
-
+        id: sample_button
+        text: "Refer"
+        pos_hint: {"center_x": .8, "center_y": .6}
+        size_hint: (.1, .06)
+        on_press:
+            root.sample_button_press()
+        on_release:
+            root.sample_button_release(app.personal_dict)
 
 
 <PersonalManagerScreen>:
 
-    FloatLayout:
+    Button:
+        text: "Back"
+        pos_hint: {'center_x': .1, 'center_y': .1}
+        size_hint: (.1, .1)
+        on_press: 
+            root.manager.current = "personal"
+            root.manager.transition = SlideTransition()
 
-        Button:
-            text: "Back"
-            pos_hint: {'center_x': .1, 'center_y': .1}
-            size_hint: (.1, .1)
-            on_press: 
-                root.manager.current = "personal"
-                root.manager.transition = SlideTransition()
+    ScrollView:
 
-        ScrollView:
+        pos_hint: {"center_x": .5, "center_y": .4}
+        size_hint: (.5, .5)
 
-            pos_hint: {"center_x": .5, "center_y": .4}
-            size_hint: (.5, .5)
+        scroll_timeout: 100
+        do_scroll_x: False
 
-            scroll_timeout: 100
-            do_scroll_x: False
+        WordLayout:
+            wordset: app.personal_dict
+            on_wordset: self.update()
+            
+            cols: 1
+            spacing: 10
+            padding: 10
 
-            WordLayout:
-                wordset: app.personal_dict
-                on_wordset: self.update()
-                
-                cols: 1
-                spacing: 10
-                padding: 10
+            row_default_height: self.parent.height / 8.0
 
-                row_default_height: self.parent.height / 8.0
+            size_hint: (None, None)
+            width: self.parent.width
+            on_minimum_height: self.setter("height")(self, self.minimum_height)
 
-                size_hint: (None, None)
-                width: self.parent.width
-                on_minimum_height: self.setter("height")(self, self.minimum_height)
-
-    

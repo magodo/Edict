@@ -47,65 +47,15 @@ kivy.require("1.8.0")
 #######################
 get_conf(globals())
 __personal_dict___ = os.path.abspath(os.path.join(os.path.curdir, 'personal_dict.pkl'))
-__font__ = r"fonts/DroidSansFallback.ttf"
+__font__ = os.path.abspath(os.path.join(os.path.curdir,"fonts","DroidSansFallback.ttf"))
 
 #######################
 #   Widgets           #
 #######################
 
 #----------------------
-# TextInput
-#----------------------
-class ReferTextInput(TextInput):
-
-    def __init__(self, **kargs):
-        super(ReferTextInput, self).__init__(**kargs)
-
-    def offlinerefer(self, offline_dict, word):
-        """Return meaning for a word from offline dict"""
-        meaning = offline_refer(offline_dict, word.strip())
-        if meaning:
-            return meaning
-        else:
-            return None
-
-    def personalrefer(self, personal_dict, word):
-        """Return meaning for a word from personal dict"""
-        meaning = personal_refer(personal_dict, word.strip())
-        if meaning:
-            return meaning
-        else:
-            return None
-
-#----------------------
-# Label
-#----------------------
-class ChineseLabel(Label):
-    def __init__(self, **kargs):
-        # Show Chinese
-        super(ChineseLabel, self).__init__(**kargs)
-        self.font_name = kivy.resources.resource_find(__font__)
-
-#----------------------
 # Buttons
 #----------------------
-class CollButton(Button):
-
-    def __init__(self, **kargs):
-        super(CollButton, self).__init__(**kargs)
-        self.disabled = True
-
-    def show_view(self, word, meaning, personal_dict):
-        """Show ModalView depends on if obj is True(word to collect), or False(Non word)"""
-        word = word.strip()
-        if word in personal_dict.keys():
-            # Exist
-            ExistCollView().open()
-        else:
-            # Not exist
-            obj = BaseDict(word)
-            obj.meaning = meaning
-            CollView(target = obj).open()
 
 class SampleButton(Button):
 
@@ -154,7 +104,7 @@ class SampleButton(Button):
                     match = word
         return match
 
-class ListWordButton(Button):
+class WordButton(Button):
 
     def show(self, target):
         WordView(target = target).open()
@@ -167,8 +117,6 @@ class DeleteButton(Button):
         dump_personal_dict(dict(personal_dict), personal_dict_path)
         v = SuccessDelView(word = word, last_view = self.parent.parent)
         v.open()
-
-
 
 #----------------------
 # ModalView
@@ -228,15 +176,14 @@ class WordLayout(GridLayout):
     def __init__(self, **kargs):
         super(WordLayout, self).__init__(**kargs)
         for word in sorted(self.wordset.keys()):
-            btn = ListWordButton(text = word)
+            btn = WordButton(text = word)
             self.add_widget(btn)
 
     def update(self):
         self.clear_widgets()
         for word in sorted(self.wordset.keys()):
-            btn = ListWordButton(text = word)
+            btn = WordButton(text = word)
             self.add_widget(btn)
-
 
 #----------------------
 # Screens
@@ -245,10 +192,55 @@ class HomeScreen(Screen):
     pass
 
 class OffLineScreen(Screen):
-    pass
+    """Offline dictionary screen."""
+
+    def offlinerefer(self, offline_dict, word):
+        """Refer a word in offline_dict by keyboard input"""
+        meaning = offline_refer(offline_dict, word.strip())
+        if meaning:
+            self.coll_button.disabled = False
+            self.show_label.text = meaning
+        else:
+            self.show_label.text = "Word: %s not found" % self.textinput.text
+        return
+
+    def show_view(self, personal_dict):
+        """Show ModalView depends on if obj is True(word to collect), or False(Non word)"""
+        word = self.textinput.text.strip()
+        if word in personal_dict.keys():
+            # Exist
+            ExistCollView().open()
+        else:
+            # Not exist
+            obj = BaseDict(word)
+            obj.meaning = self.show_label.text
+            CollView(target = obj).open()
+
 
 class PersonalScreen(Screen):
-    pass
+    """Personal dictionary screen."""
+
+    def personalrefer(self, personal_dict, word):
+        """Refer a word in personal_dict by keyboard input"""
+        meaning = personal_refer(personal_dict, word.strip())
+        if meaning:
+            self.show_label.text = meaning
+        else:
+            self.show_label.text = "Word: %s not found" % self.textinput.text
+        return
+
+    def sample_button_press(self):
+        """Record voice when pressed down"""
+        self.sample_button.startRecord()
+
+    def sample_button_release(self, personal_dict):
+        """Finish recording when release, and do the match"""
+        self.sample_button.stopRecord()
+        match = self.sample_button.refer(personal_dict)
+        if match:
+            self.show_label.text = personal_dict[match].meaning
+        else:
+            self.show_label.text = "No voiced word in Personal dictionary!"
 
 class PersonalManagerScreen(Screen):
     pass
@@ -269,18 +261,15 @@ class EdictApp(App):
 
     def __init__(self, **kargs):
 
+        super(EdictApp, self).__init__(**kargs)
         # Load Dicts
         self.personal_dict_path = __personal_dict___
         self.personal_dict, self.offline_dict = load(__personal_dict___, OFFLINE_IDX_PATH, OFFLINE_DICT_PATH)
-        super(EdictApp, self).__init__(**kargs)
+        # Find fonts
+        self.font_name = kivy.resources.resource_find(__font__)
 
     def build(self):
         return EdictScreenManager()
 
-
-
 if __name__ == "__main__":
     EdictApp().run()
-
-
-
