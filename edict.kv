@@ -70,9 +70,8 @@
             size_hint: (.2, .2)
             pos_hint: {"center_x": .3, "center_y": .6}
             text: "Sample"
-            on_press: self.startRecord()
-            on_release: 
-                self.stopRecord()
+            on_press: 
+                self.startRecord()
                 self.popupChoose()
 
         Label:
@@ -307,8 +306,6 @@
             size_hint: (.1, .06)
             on_press:
                 self.startRecord()
-            on_release:
-                self.stopRecord()
                 match = self.refer(app.personal_dict)
                 if match: \
                 self.show_label.text = app.personal_dict[match].meaning

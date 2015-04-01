@@ -5,24 +5,23 @@
 
 1. kivy
 2. numpy
+3. audiostream
 
 
 ##PROBLEM:
 
-Configuration:
-    In home directory, named .edictrc.py
-    (There is a template in edict directory named edictr.temp)
-
-
 Audio:
-    pyaudio 播声音不到2s
-    pyaudio录声音有错误log
+    Since using "kivy/audiostream" to do the recording. Don't know why could not create a thread and do the record in parallel. 
+    So changed to record for a fix duration: 2 seconds.
 
 DTW:
     Algorithm modify
 
 Match process:
     Importve
+
+Performance:
+    No matter mfcc generation or dtw match. All take long time!!!
 
 
 

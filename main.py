@@ -18,6 +18,11 @@ from lib.base.core import get_conf, BaseDict, dump_personal_dict, load, load_per
 from lib.speech.mfcc import mfcc
 from lib.speech.dtw import dtw
 
+# For android audio recording
+from audiostream import get_input, get_output, get_input_sources, AudioSample
+import time
+import binascii
+
 import kivy
 import kivy.resources
 from kivy.app import App
@@ -106,33 +111,52 @@ class CollButton(Button):
 class SampleButton(Button):
 
     def __init__(self, **kargs):
-        self.stop_dict = {"flag": False}
-        self.is_stopped = False
+        # Data store
         self.data = None
+        self.bin_data = None
+
+        # Output stream initialize
+        self.stream = get_output(channels=1, buffersize=1024, rate=8000)
+        self.sample = AudioSample()
+        self.stream.add_sample(self.sample)
+
         super(SampleButton, self).__init__(**kargs)
 
-    def startRecord(self):
-        def t_startRecord():
-            print "recording..."
-            #self.data = keep_record(self.stop_dict)
-            self.data = [1,2,3]
-            #FIXME
-            self.is_stopped = True
-        t = threading.Thread(target = t_startRecord)
-        t.start()
+    def startRecord(self, channels=1, encoding=16, rate=8000):
+        def mic_callback(buf):
+            print "got data", len(buf)
+            frames.append(buf)
+        frames = []
+        # Need to set buffersize
+        mic = get_input(callback=mic_callback, channels=channels, rate=rate, encoding=encoding, buffersize=1024)
+        mic.start()
+        print "MIC started..."
+        time.sleep(.5)
+        mic.poll()
+        time.sleep(.5)
+        mic.poll()
+        time.sleep(.5)
+        mic.poll()
+        time.sleep(.5)
+        mic.poll()
 
-    def stopRecord(self):
-        print "stopping..."
-        self.stop_dict['flag'] = True
-        while not self.is_stopped:
-            pass
-        # Prepare for next record
-        self.stop_dict['flag'] = False
-        self.is_stopped = False
+        mic.stop()
+        print "MIC ended..."
+
+        # Remove the prepending Inpulse voice
+        bin_data = ''.join(frames)[200:]
+        data = [int(binascii.b2a_hex(i), 16) for i in bin_data]
+
+        # Return both pure data and binary data string for speaker.
+        self.data = numpy.array(data)
+        self.bin_data = bin_data
 
     def popupChoose(self):
-        #echo(self.data)
-        #FIXME
+        #Echo
+        self.sample.stop()
+        self.sample.play()
+        self.sample.write(self.bin_data)
+
         p = CollChooseView(wave = self.data, target = self.target, last_view = self.parent.parent)
         p.open()
 
