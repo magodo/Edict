@@ -59,9 +59,15 @@ EdictRoot:
                     size_hint_x: 2
                     multiline: False
                     on_text_validate: root.refer(self.text, app.root.personal_dict)
-                Button: 
+                SampleButton: 
                     size_hint_x: 1
                     text: "Voice"
+                    on_press: self.startRecord()
+                    on_release: 
+                        root.wave = self.stopRecord()
+                        match = root.voice_refer()
+                        if match: \
+                        app.root.show_word(match, personal_flag=True)
             Label:
                 text: "Personal"
         NaviBar
@@ -126,6 +132,24 @@ EdictRoot:
                 size_hint: (None, None)
                 size: (self.parent.width, self.texture_size[1])
 
+######################## Popups ##########################
+<CollectPopup>:
+    SampleButton:
+        on_press: self.startRecord()
+        on_release: 
+            root.wave = self.stopRecord()
+            root.popupChoose()
+
+<ChoosePopup>:
+    BoxLayout:
+        orientation: "horizontal"
+        Button:
+            text: "Accept"
+            on_release: root.accept()
+        Button:
+            text: "Deny"
+            on_release: root.deny()
+
 ######################## Others ##########################
 <NaviBar@BoxLayout>:
     orientation: "horizontal"
@@ -141,4 +165,4 @@ EdictRoot:
         on_release: app.open_settings()
 
 <WordButton>:
-    on_release: app.root.show_word(self.text, app.root.personal_dict[self.text].meaning)
+    on_release: app.root.show_word(self.text, personal_flag = True)
