@@ -1,31 +1,130 @@
 #:kivy 1.8.0
+#: import resource_find kivy.resources.resource_find
 
-# Root Widget
+# Root
 EdictRoot:
-    orientation: "horizontal"
-    NaviBar:
-        size_hint_x: 1
-    OfflineDict:
-        size_hint_x: 5
+<EdictRoot>:
+    OfflineScreen:
+        name: "offline"
+    PersonalScreen:
+        name: "personal"
+    PersonalManagerScreen:
+        name: "manager"
+    WordScreen:
+        name: "word"
+    
 
-# Rules
-<NaviBar>:
-    orientation: "vertical"
-    spacing: "20dp"
-    Label:
+<NaviBar@BoxLayout>:
+    orientation: "horizontal"
+    size_hint_y: 1
     Button: 
         text: "off-line"
-        on_press: app.root.show_offline_dict()
-    Label:
+        on_release: app.root.show_offline()
     Button: 
         text: "personal"
-        on_press: app.root.show_personal_dict()
-    Label:
+        on_release: app.root.show_personal()
     Button:
         text: "Settings"
-        on_press: app.open_settings()
-    Label:
+        on_release: app.open_settings()
 
-<OfflineDict>:
+# Screen
+<OfflineScreen>:
+    text_input: text_input
+    BoxLayout:
+        orientation: "vertical"
+        BoxLayout:
+            size_hint_y: 8
+            orientation: "vertical"
+            BoxLayout:
+                orientation: "horizontal"
+                size_hint_y: None
+                height: "40dp"
+                TextInput:
+                    id: text_input
+                    focus: True
+                    multiline: False
+                    on_text_validate: root.refer(self.text, app.root.offline_dict)
+            Label:
+                text: "OfflineDict"
+        NaviBar
+
+<PersonalScreen>:
+    text_input: text_input
+    BoxLayout:
+        orientation: "vertical"
+        BoxLayout:
+            size_hint_y: 8
+            orientation: "vertical"
+            BoxLayout:
+                orientation: "horizontal"
+                size_hint_y: None
+                height: "40dp"
+                spacing: "10dp"
+                Button: 
+                    size_hint_x: 1
+                    text: "Manage"
+                    on_release: app.root.show_personal_manager()
+                TextInput:
+                    id: text_input
+                    size_hint_x: 2
+                    multiline: False
+                    on_text_validate: root.refer(self.text, app.root.personal_dict)
+                Button: 
+                    size_hint_x: 1
+                    text: "Voice"
+            Label:
+                text: "Personal"
+        NaviBar
     
+<PersonalManagerScreen>:
+    BoxLayout:
+        orientation: "vertical"
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: "40dp"
+            Button: 
+                size_hint_x: 1
+                text: "Back"
+                on_release: app.root.show_personal()
+            Label:
+                size_hint_x: 3
+                text: "My Personal Dictionary"
+            Button: 
+                size_hint_x: 1
+                text: "Edit"
+        Label:
+            text: "Personal Manager"
+
+<WordScreen>:
+    word: word
+    meaning: meaning
+
+    BoxLayout:
+        orientation: "vertical"
+        spacing: "20dp"
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: "40dp"
+            Button:
+                size_hint_x: 1
+                text: "Back"
+                on_release: app.root.show_last_screen()
+            Label:
+                id: word
+                size_hint_x: 3
+            Button: 
+                size_hint_x: 1
+                text: "Collect"
+                on_release: print "FIXME"
+        ScrollView:
+            do_scroll_x: False
+            Label:
+                id: meaning
+                font_name: resource_find(app.config.get("Font", "Path"))
+                text_size: (self.parent.width, None)
+                size_hint: (None, None)
+                size: (self.parent.width, self.texture_size[1])
+
 

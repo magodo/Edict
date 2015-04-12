@@ -149,7 +149,7 @@ def offline_refer(off_dict, word):
     :returns: Meaning of the word.
     """
 
-    if word in off_dict:
+    if word.strip() in off_dict.keys():
         return off_dict[word]
     else:
         return False
@@ -160,7 +160,7 @@ def personal_refer(p_dict, word):
     :param word: word to refer.
     :returns: Meaning of word.
     """
-    if word in p_dict.keys():
+    if word.strip() in p_dict.keys():
         return p_dict[word].meaning
     else:
         return False

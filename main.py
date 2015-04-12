@@ -38,10 +38,11 @@ from kivy.uix.popup import Popup
 from kivy.uix.modalview import ModalView
 from kivy.properties import ObjectProperty, StringProperty, DictProperty
 from kivy.graphics import Color, Rectangle
+from kivy.uix.screenmanager import FadeTransition
 
 kivy.require("1.8.0")
 
-
+debug = None
 
 ########################
 ##   Widgets           #
@@ -236,43 +237,77 @@ kivy.require("1.8.0")
 #        else:
 #            self.show_label.text = "No voiced word in Personal dictionary!"
 #
-#class PersonalManagerScreen(Screen):
-#    pass
-#
-##----------------------
-## ScreenManager
-##----------------------
-#class EdictScreenManager(ScreenManager):
-#    pass
-#
+
+
 #######################
-#       Offline Dict
+#       Word Screen
 #######################
-class OfflineDict(BoxLayout):
+class WordScreen(Screen):
+    word = ObjectProperty()
+    meaning = ObjectProperty()
+
+#######################
+#       Offline Screen
+#######################
+class OfflineScreen(Screen):
+    text_input = ObjectProperty()
+
+    def refer(self, word, dikt):
+        meaning = offline_refer(dikt, word)
+        if meaning:
+            wordscreen = EdictApp.get_running_app().root.get_screen("word")
+            wordscreen.word.text = word
+            wordscreen.meaning.text = meaning
+
+            EdictApp.get_running_app().root.last_screen = EdictApp.get_running_app().root.current
+            EdictApp.get_running_app().root.transition = FadeTransition()
+            EdictApp.get_running_app().root.current = "word"
+        else:
+            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            modview.add_widget(Label(text = "Word %s not found!"%word))
+            modview.open()
+
+#######################
+#       Personal Screen
+#######################
+class PersonalScreen(Screen):
+    text_input = ObjectProperty()
+
+    def refer(self, word, dikt):
+        meaning = personal_refer(dikt, word)
+        if meaning:
+            wordscreen = EdictApp.get_running_app().root.get_screen("word")
+            wordscreen.word.text = word
+            wordscreen.meaning.text = meaning
+
+            EdictApp.get_running_app().root.last_screen = EdictApp.get_running_app().root.current
+            EdictApp.get_running_app().root.transition = FadeTransition()
+            EdictApp.get_running_app().root.current = "word"
+        else:
+            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            modview.add_widget(Label(text = "Word %s not found!"%word))
+            modview.open()
+
+#######################
+#       Manager Screen
+#######################
+class PersonalManagerScreen(Screen):
     pass
 
 #######################
-#       Navi bar
+#       Root          #
 #######################
-class NaviBar(BoxLayout):
-    pass
-
-
-#######################
-#       Root
-#######################
-class EdictRoot(BoxLayout):
+class EdictRoot(ScreenManager):
     personal_dict_path = StringProperty()
     personal_dict = ObjectProperty()
     offline_dict = ObjectProperty()
-    font_name = ObjectProperty()
+
+    last_screen = ObjectProperty()
 
     def __init__(self, **kargs):
         super(EdictRoot, self).__init__(**kargs)
         # Get configurations
         config = EdictApp.get_running_app().config
-            # font
-        font_path = config.get("Font", "Path")
             # offline
         offline_path = config.get("Offline", "Path")
         offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
@@ -282,11 +317,42 @@ class EdictRoot(BoxLayout):
         # Load
         self.personal_dict_path = personal_dict_path
         self.personal_dict, self.offline_dict = load(personal_dict_path, offline_idx_path, offline_dict_path)
-        self.font_name = kivy.resources.resource_find(font_path)
 
-########################
-#        App           #
-########################
+    def show_offline(self):
+        # save last screen
+        self.last_screen = self.current
+        # set focus
+        self.get_screen("personal").text_input.focus = False
+        self.get_screen("offline").text_input.focus = True
+        # switch
+        self.transition = FadeTransition()
+        self.current = "offline"
+
+    def show_personal(self):
+        # save last screen
+        self.last_screen = self.current
+        # set focus
+        self.get_screen("offline").text_input.focus = False
+        self.get_screen("personal").text_input.focus = True
+        # switch
+        self.transition = FadeTransition()
+        self.current = "personal"
+
+    def show_personal_manager(self):
+        # save last screen
+        self.last_screen = self.current
+        # switch
+        self.transition = FadeTransition()
+        self.current = "manager"
+
+    def show_last_screen(self):
+        self.transition = FadeTransition()
+        self.current = self.last_screen
+
+
+################################################
+#        App                                   #
+################################################
 class EdictApp(App):
 
     def build_config(self, config):
