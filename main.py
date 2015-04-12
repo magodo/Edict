@@ -28,6 +28,7 @@ from kivy.app import App
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.listview import ListItemButton
+from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
@@ -40,203 +41,74 @@ from kivy.uix.screenmanager import FadeTransition
 
 kivy.require("1.8.0")
 
-debug = None
 
-########################
-##   Widgets           #
-########################
-#
-##----------------------
-## Buttons
-##----------------------
-#
-#class SampleButton(Button):
-#
-#    def __init__(self, **kargs):
-#        self.stop_dict = {"flag": False}
-#        self.is_stopped = False
-#        self.data = None
-#        super(SampleButton, self).__init__(**kargs)
-#
-#    def startRecord(self):
-#        def t_startRecord():
-#            print "recording..."
-#            self.data = keep_record(self.stop_dict)
-#            self.is_stopped = True
-#        t = threading.Thread(target = t_startRecord)
-#        t.start()
-#
-#    def stopRecord(self):
-#        print "stopping..."
-#        self.stop_dict['flag'] = True
-#        while not self.is_stopped:
-#            pass
-#        # Prepare for next record
-#        self.stop_dict['flag'] = False
-#        self.is_stopped = False
-#
-#    def popupChoose(self):
-#        echo(self.data)
-#        p = CollChooseView(wave = self.data, target = self.target, last_view = self.parent.parent)
-#        p.open()
-#
-#    def refer(self, personal_dict):
-#        target_feature = mfcc(self.data)
-#        match = None
-#        score = numpy.inf
-#        words = personal_dict.keys()
-#
-#        if len(words) == 0:
-#            return None
-#        for word in words:
-#            if personal_dict[word].feature is not None:
-#                tmp_score = dtw(personal_dict[word].feature, target_feature)
-#                print "%s: %f" %(word, tmp_score)
-#                if tmp_score < score:
-#                    score = tmp_score
-#                    match = word
-#        return match
-#
-#class WordButton(Button):
-#
-#    def show(self, target):
-#        WordView(target = target).open()
-#
-#class DeleteButton(Button):
-#
-#    def delete(self, word, personal_dict, personal_dict_path):
-#        del personal_dict[word]
-#        # Convert kivy ObservableDict to python dict so that could be dumped by Pickle
-#        dump_personal_dict(dict(personal_dict), personal_dict_path)
-#        v = SuccessDelView(word = word, last_view = self.parent.parent)
-#        v.open()
-#
-##----------------------
-## ModalView
-##----------------------
-#class ExistCollView(ModalView):
-#    pass
-#
-#class SuccessCollView(ModalView):
-#    pass
-#
-#class CollView(ModalView):
-#
-#    def __init__(self, target, **kargs):
-#        self.target = target
-#        super(CollView, self).__init__(**kargs)
-#
-#    def collect(self, personal_dict, personal_dict_path):
-#        personal_dict[self.target.word] = self.target
-#        # Convert kivy ObservableDict to python dict so that could be dumped by Pickle
-#        dump_personal_dict(dict(personal_dict), personal_dict_path)
-#        SuccessCollView().open()
-#
-#class CollChooseView(ModalView):
-#    def __init__(self, last_view, target, wave, **kargs):
-#        self.last_view = last_view
-#        self.target = target
-#        self.wave = wave
-#        super(CollChooseView, self).__init__(**kargs)
-#
-#    def collect(self, personal_dict, personal_dict_path):
-#        self.target.feature = mfcc(self.wave)
-#        personal_dict[self.target.word] = self.target
-#        # Convert kivy ObservableDict to python dict so that could be dumped by Pickle
-#        dump_personal_dict(dict(personal_dict), personal_dict_path)
-#        SuccessCollView().open()
-#
-#class WordView(ModalView):
-#
-#    def __init__(self, target, **kargs):
-#        self.target= target
-#        super(WordView, self).__init__(**kargs)
-#
-#class SuccessDelView(ModalView):
-#
-#    def __init__(self, word, last_view, **kargs):
-#        self.word = word
-#        self.last_view = last_view
-#        super(SuccessDelView, self).__init__(**kargs)
-#
-##----------------------
-## Layout
-##----------------------
-#
-#class WordLayout(GridLayout):
-#    wordset = DictProperty(load_personal_dict(__personal_dict___))
-#
-#    def __init__(self, **kargs):
-#        super(WordLayout, self).__init__(**kargs)
-#        for word in sorted(self.wordset.keys()):
-#            btn = WordButton(text = word)
-#            self.add_widget(btn)
-#
-#    def update(self):
-#        self.clear_widgets()
-#        for word in sorted(self.wordset.keys()):
-#            btn = WordButton(text = word)
-#            self.add_widget(btn)
-#
-##----------------------
-## Screens
-##----------------------
-#class HomeScreen(Screen):
-#    pass
-#
-#class OffLineScreen(Screen):
-#    """Offline dictionary screen."""
-#
-#    def offlinerefer(self, offline_dict, word):
-#        """Refer a word in offline_dict by keyboard input"""
-#        meaning = offline_refer(offline_dict, word.strip())
-#        if meaning:
-#            self.coll_button.disabled = False
-#            self.show_label.text = meaning
-#        else:
-#            self.show_label.text = "Word: %s not found" % self.textinput.text
-#        return
-#
-#    def show_view(self, personal_dict):
-#        """Show ModalView depends on if obj is True(word to collect), or False(Non word)"""
-#        word = self.textinput.text.strip()
-#        if word in personal_dict.keys():
-#            # Exist
-#            ExistCollView().open()
-#        else:
-#            # Not exist
-#            obj = BaseDict(word)
-#            obj.meaning = self.show_label.text
-#            CollView(target = obj).open()
-#
-#
-#class PersonalScreen(Screen):
-#    """Personal dictionary screen."""
-#
-#    def personalrefer(self, personal_dict, word):
-#        """Refer a word in personal_dict by keyboard input"""
-#        meaning = personal_refer(personal_dict, word.strip())
-#        if meaning:
-#            self.show_label.text = meaning
-#        else:
-#            self.show_label.text = "Word: %s not found" % self.textinput.text
-#        return
-#
-#    def sample_button_press(self):
-#        """Record voice when pressed down"""
-#        self.sample_button.startRecord()
-#
-#    def sample_button_release(self, personal_dict):
-#        """Finish recording when release, and do the match"""
-#        self.sample_button.stopRecord()
-#        match = self.sample_button.refer(personal_dict)
-#        if match:
-#            self.show_label.text = personal_dict[match].meaning
-#        else:
-#            self.show_label.text = "No voiced word in Personal dictionary!"
-#
+######## Popup #########
+class CollectPopup(Popup):
+
+    def __init__(self, target, **kargs):
+        super(CollectPopup, self).__init__(**kargs)
+        self.target = target
+        self.wave = None
+
+    def popupChoose(self):
+        echo(self.wave)
+        p = ChoosePopup(wave = self.wave, target = self.target, last_popup = self)
+        p.open()
+
+class ChoosePopup(Popup):
+
+    def __init__(self, wave, target, last_popup, **kargs):
+        super(ChoosePopup, self).__init__(**kargs)
+        self.wave = wave
+        self.target = target
+        self.last_popup = last_popup
+
+    def deny(self):
+        self.dismiss()
+        self.last_popup.dismiss()
+
+    def accept(self):
+        self.dismiss()
+        self.last_popup.dismiss()
+        # Get personal dict (path)
+        personal_dict = EdictApp.get_running_app().root.personal_dict
+        personal_dict_path = EdictApp.get_running_app().root.personal_dict_path
+        # Calculate MFCC
+        self.target.feature = mfcc(self.wave)
+        personal_dict[self.target.word] = self.target
+        dump_personal_dict(personal_dict, personal_dict_path)
+        mod_view_success = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+        mod_view_success.add_widget(Label(text="Successfully collect!"))
+        mod_view_success.open()
 
 ######## Button #########
+class SampleButton(Button):
+
+    def __init__(self, **kargs):
+        self.stop_dict = {"flag": False}
+        self.is_stopped = False
+        self.wave = None
+        super(SampleButton, self).__init__(**kargs)
+
+    def startRecord(self):
+        def t_startRecord():
+            print "recording..."
+            self.wave = keep_record(self.stop_dict)
+            self.is_stopped = True
+        t = threading.Thread(target = t_startRecord)
+        t.start()
+
+    def stopRecord(self):
+        print "stopping..."
+        self.stop_dict['flag'] = True
+        while not self.is_stopped:
+            pass
+        # Prepare for next record
+        self.stop_dict['flag'] = False
+        self.is_stopped = False
+        # Return wave data
+        return self.wave
+
 class WordButton(ListItemButton):
     pass
 
@@ -249,21 +121,18 @@ class WordScreen(Screen):
     meaning = ObjectProperty()
 
     def collect(self, word, meaning):
+        # Get personal dict (path)
         personal_dict = EdictApp.get_running_app().root.personal_dict
-        personal_dict_path = EdictApp.get_running_app().root.personal_dict_path
         if word in personal_dict.keys():
             mod_view_exists = ModalView(auto_dismiss = True, size_hint=(.5, .1))
             mod_view_exists.add_widget(Label(text="Word already exists!"))
             mod_view_exists.open()
         else:
-            # Collect to personal dict
             target = BaseDict(word)
             target.meaning = meaning
-            personal_dict[word] = target
-            dump_personal_dict(personal_dict, personal_dict_path)
-            mod_view_success = ModalView(auto_dismiss = True, size_hint=(.5, .1))
-            mod_view_success.add_widget(Label(text="Successfully collect!"))
-            mod_view_success.open()
+            # Pop up voice button to record
+            CollectPopup(target).open()
+
 
 #######################
 #       Offline Screen
@@ -294,6 +163,27 @@ class PersonalScreen(Screen):
             modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
             modview.add_widget(Label(text = "Word %s not found!"%word))
             modview.open()
+
+    def voice_refer(self):
+        personal_dict = EdictApp.get_running_app().root.personal_dict
+        target_feature = mfcc(self.wave)
+        match = None
+        score = numpy.inf
+        words = personal_dict.keys()
+        if len(words) == 0:
+            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            modview.add_widget(Label(text = "No word in personal dictionary!"))
+            modview.open()
+            return None
+        for word in words:
+            if personal_dict[word].feature is not None:
+                tmp_score = dtw(personal_dict[word].feature, target_feature)
+                print "%s: %f" %(word, tmp_score)
+                if tmp_score < score:
+                    score = tmp_score
+                    match = word
+        return match
+
 
 #######################
 #       Manager Screen
@@ -369,8 +259,6 @@ class EdictRoot(ScreenManager):
     def show_last_screen(self):
         self.transition = FadeTransition()
         self.current = self.last_screen
-
-
 
 ################################################
 #        App                                   #
