@@ -27,14 +27,12 @@ import kivy.resources
 from kivy.app import App
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.listview import ListItemButton
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.textinput import TextInput
-from kivy.uix.widget import Widget
-from kivy.uix.popup import Popup
 from kivy.uix.modalview import ModalView
 from kivy.properties import ObjectProperty, StringProperty, DictProperty
 from kivy.graphics import Color, Rectangle
@@ -238,6 +236,10 @@ debug = None
 #            self.show_label.text = "No voiced word in Personal dictionary!"
 #
 
+######## Button #########
+class WordButton(ListItemButton):
+    pass
+
 
 #######################
 #       Word Screen
@@ -245,6 +247,23 @@ debug = None
 class WordScreen(Screen):
     word = ObjectProperty()
     meaning = ObjectProperty()
+
+    def collect(self, word, meaning):
+        personal_dict = EdictApp.get_running_app().root.personal_dict
+        personal_dict_path = EdictApp.get_running_app().root.personal_dict_path
+        if word in personal_dict.keys():
+            mod_view_exists = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            mod_view_exists.add_widget(Label(text="Word already exists!"))
+            mod_view_exists.open()
+        else:
+            # Collect to personal dict
+            target = BaseDict(word)
+            target.meaning = meaning
+            personal_dict[word] = target
+            dump_personal_dict(personal_dict, personal_dict_path)
+            mod_view_success = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            mod_view_success.add_widget(Label(text="Successfully collect!"))
+            mod_view_success.open()
 
 #######################
 #       Offline Screen
@@ -255,13 +274,7 @@ class OfflineScreen(Screen):
     def refer(self, word, dikt):
         meaning = offline_refer(dikt, word)
         if meaning:
-            wordscreen = EdictApp.get_running_app().root.get_screen("word")
-            wordscreen.word.text = word
-            wordscreen.meaning.text = meaning
-
-            EdictApp.get_running_app().root.last_screen = EdictApp.get_running_app().root.current
-            EdictApp.get_running_app().root.transition = FadeTransition()
-            EdictApp.get_running_app().root.current = "word"
+            EdictApp.get_running_app().root.show_word(word, meaning)
         else:
             modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
             modview.add_widget(Label(text = "Word %s not found!"%word))
@@ -276,13 +289,7 @@ class PersonalScreen(Screen):
     def refer(self, word, dikt):
         meaning = personal_refer(dikt, word)
         if meaning:
-            wordscreen = EdictApp.get_running_app().root.get_screen("word")
-            wordscreen.word.text = word
-            wordscreen.meaning.text = meaning
-
-            EdictApp.get_running_app().root.last_screen = EdictApp.get_running_app().root.current
-            EdictApp.get_running_app().root.transition = FadeTransition()
-            EdictApp.get_running_app().root.current = "word"
+            EdictApp.get_running_app().root.show_word(word, meaning)
         else:
             modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
             modview.add_widget(Label(text = "Word %s not found!"%word))
@@ -292,7 +299,7 @@ class PersonalScreen(Screen):
 #       Manager Screen
 #######################
 class PersonalManagerScreen(Screen):
-    pass
+    word_list = ObjectProperty()
 
 #######################
 #       Root          #
@@ -341,13 +348,28 @@ class EdictRoot(ScreenManager):
     def show_personal_manager(self):
         # save last screen
         self.last_screen = self.current
+        # Set list view
+        del self.get_screen("manager").word_list.adapter.data[:]
+        self.get_screen("manager").word_list.adapter.data.extend(list(EdictApp.get_running_app().root.personal_dict.keys()))
+        self.get_screen("manager").word_list._trigger_reset_populate()
         # switch
         self.transition = FadeTransition()
         self.current = "manager"
 
+    def show_word(self, word, meaning):
+        # save last screen
+        self.last_screen = self.current
+        # modify content
+        self.get_screen("word").word.text = word
+        self.get_screen("word").meaning.text = meaning
+        # switch
+        self.transition = FadeTransition()
+        self.current = "word"
+
     def show_last_screen(self):
         self.transition = FadeTransition()
         self.current = self.last_screen
+
 
 
 ################################################

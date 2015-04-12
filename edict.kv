@@ -1,7 +1,9 @@
 #:kivy 1.8.0
 #: import resource_find kivy.resources.resource_find
+#: import ListAdapter kivy.adapters.listadapter.ListAdapter
+#: import main main
 
-# Root
+############################# Root #############################
 EdictRoot:
 <EdictRoot>:
     OfflineScreen:
@@ -14,20 +16,8 @@ EdictRoot:
         name: "word"
     
 
-<NaviBar@BoxLayout>:
-    orientation: "horizontal"
-    size_hint_y: 1
-    Button: 
-        text: "off-line"
-        on_release: app.root.show_offline()
-    Button: 
-        text: "personal"
-        on_release: app.root.show_personal()
-    Button:
-        text: "Settings"
-        on_release: app.open_settings()
 
-# Screen
+############################# Screen #############################
 <OfflineScreen>:
     text_input: text_input
     BoxLayout:
@@ -77,8 +67,11 @@ EdictRoot:
         NaviBar
     
 <PersonalManagerScreen>:
+    word_list: word_list
+
     BoxLayout:
         orientation: "vertical"
+        spacing: "20dp"
         BoxLayout:
             orientation: "horizontal"
             size_hint_y: None
@@ -93,8 +86,13 @@ EdictRoot:
             Button: 
                 size_hint_x: 1
                 text: "Edit"
-        Label:
-            text: "Personal Manager"
+        ListView:
+            id: word_list
+            adapter:
+                ListAdapter(
+                data = [],
+                cls = main.WordButton
+                )
 
 <WordScreen>:
     word: word
@@ -117,7 +115,8 @@ EdictRoot:
             Button: 
                 size_hint_x: 1
                 text: "Collect"
-                on_release: print "FIXME"
+                on_release: 
+                    root.collect(word.text, meaning.text)
         ScrollView:
             do_scroll_x: False
             Label:
@@ -127,4 +126,19 @@ EdictRoot:
                 size_hint: (None, None)
                 size: (self.parent.width, self.texture_size[1])
 
+######################## Others ##########################
+<NaviBar@BoxLayout>:
+    orientation: "horizontal"
+    size_hint_y: 1
+    Button: 
+        text: "off-line"
+        on_release: app.root.show_offline()
+    Button: 
+        text: "personal"
+        on_release: app.root.show_personal()
+    Button:
+        text: "Settings"
+        on_release: app.open_settings()
 
+<WordButton>:
+    on_release: app.root.show_word(self.text, app.root.personal_dict[self.text].meaning)
