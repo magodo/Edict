@@ -1,0 +1,35 @@
+[
+    {
+        "type": "title",
+        "title": "Offline Dictionary"
+    },
+    {
+        "type": "path",
+        "title": "Offline Dictionary Path",
+        "desc": "Choose the path to offline dictionary",
+        "section": "Offline",
+        "key": "Path"
+    },
+    {
+        "type": "title",
+        "title": "Personal Dictionary"
+    },
+    {
+        "type": "path",
+        "title": "Personal Dictionary",
+        "desc": "Choose the path to personal dictionary",
+        "section": "Personal",
+        "key": "Path"
+    },
+    {
+        "type": "title",
+        "title": "Font"
+    },
+    {
+        "type": "path",
+        "title": "Font for Edict",
+        "desc": "Choose the path to font",
+        "section": "Font",
+        "key": "Path"
+    }
+]

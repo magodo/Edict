@@ -32,29 +32,29 @@ class BaseDict():
 ###########################
 #     Get Configuration   #
 ###########################
-def get_conf(global_dict):
-    """Get configuration for this app, which determines where the offline dictionary locates"""
-
-    home = os.curdir                        # Default
-    if 'HOME' in os.environ:
-        home = os.environ['HOME']
-    elif os.name == 'posix':
-        home = os.path.expanduser("~/")
-    elif os.name == 'nt':
-        if 'HOMEPATH' in os.environ:
-            if 'HOMEDRIVE' in os.environ:
-                home = os.environ['HOMEDRIVE'] + os.environ['HOMEPATH']
-            else:
-                home = os.environ['HOMEPATH']
-
-    edictrc = os.path.join(home, ".edictrc.py")
-    try:
-        f = open(edictrc)
-    except IOError:
-        pass
-    else:
-        f.close()
-        execfile(edictrc, global_dict)
+#def get_conf(global_dict):
+#    """Get configuration for this app, which determines where the offline dictionary locates"""
+#
+#    home = os.curdir                        # Default
+#    if 'HOME' in os.environ:
+#        home = os.environ['HOME']
+#    elif os.name == 'posix':
+#        home = os.path.expanduser("~/")
+#    elif os.name == 'nt':
+#        if 'HOMEPATH' in os.environ:
+#            if 'HOMEDRIVE' in os.environ:
+#                home = os.environ['HOMEDRIVE'] + os.environ['HOMEPATH']
+#            else:
+#                home = os.environ['HOMEPATH']
+#
+#    edictrc = os.path.join(home, ".edictrc.py")
+#    try:
+#        f = open(edictrc)
+#    except IOError:
+#        pass
+#    else:
+#        f.close()
+#        execfile(edictrc, global_dict)
 
 ###########################
 #       dump              #
@@ -83,20 +83,11 @@ def load(personal_dict_path, offline_idx_path, offline_dict_path):
     # ------------------------
     # Load personal dictionary
     # ------------------------
-    print "Loading personal dictionary: %s..." % personal_dict_path
     personal_dict = load_personal_dict(personal_dict_path)
-    print "Loading personal dictionary complete!"
-
     # ------------------------
     # Load offline dictionary
     # -----------------------
-    print "Loading offline dictionary: %s..." % offline_dict_path
     offline_dict = load_offline_dict(offline_idx_path, offline_dict_path)
-    if offline_dict is not None:
-        print "Loading offline dictionary complete!"
-    else:
-        print "Offline dictionary not found!"
-
     return (personal_dict, offline_dict)
 
 def load_personal_dict(personal_dict_path):
@@ -106,17 +97,19 @@ def load_personal_dict(personal_dict_path):
     :returns: python dictionary object representing personal dictionary's content if it exsists;
               Otherwise, create one and return empty dict.
     """
+    print "- Loading personal dictionary: %s..." % personal_dict_path
     try:
         # Load exsisting personal dictionary.
         with open(personal_dict_path, "rb") as f:
             personal_dict = pickle.load(f)
+            print "- Loading personal dictionary: %s completed!" % personal_dict_path
             return personal_dict
     except IOError:
-        print "Personal dictionary is not found!\nCreating one..."
+        print "---- Personal dictionary is not found!\n---- Creating one..."
         f = open(personal_dict_path, 'wb')
         pickle.dump({}, f, 1)
         f.close()
-        print "Personal dictionary creation completed!"
+        print "---- Personal dictionary creation completed!"
         return {}
 
 def load_offline_dict(offline_idx_path, offline_dict_path):
@@ -125,11 +118,26 @@ def load_offline_dict(offline_idx_path, offline_dict_path):
     :param offline_dict_path: path to the offline dictionary .dict file.
     :returns: python dictionary object representing offline dictionary's content if it exsists, or return None.
     """
+    offline_parsed_dict_path = offline_idx_path[:offline_idx_path.find(".")]+".pkl"
+    print "- Loading offline dictionary: %s..." % offline_parsed_dict_path
     try:
-        offline_dict = dparser.dict_parser(offline_idx_path, offline_dict_path)
-        return offline_dict
+        with open(offline_parsed_dict_path, "rb") as f:
+            offline_dict = pickle.load(f)
+            print "- Loading offline dictionary: %s completed!" % offline_parsed_dict_path
+            return offline_dict
     except IOError:
-        return None
+        try:
+            print "---- Offline dictionary is not parsed!\n---- Parsing...."
+            offline_dict = dparser.dict_parser(offline_idx_path, offline_dict_path)
+            f = open(offline_parsed_dict_path, 'wb')
+            pickle.dump(offline_dict, f, 1)
+            f.close()
+            print "---- Offline dictionary parseing completed!"
+            print "- Loading offline dictionary: %s completed!" % offline_parsed_dict_path
+            return offline_dict
+        except IOError:
+            print "- Offline dictionary not found!"
+            return None
 
 ###########################
 #     Refer               #
