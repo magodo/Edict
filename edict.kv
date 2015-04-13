@@ -38,7 +38,9 @@
         NaviBar
 
 <PersonalScreen>:
+    app: app
     text_input: text_input
+
     BoxLayout:
         orientation: "vertical"
         BoxLayout:
@@ -69,9 +71,6 @@
                     on_release: 
                         root.wave = self.stopRecord()
                         match = root.voice_refer()
-                        meaning = app.root.personal_dict[match].meaning
-                        if match: \
-                        app.root.show_word(match, meaning)
             Label:
                 text: "Personal"
         NaviBar

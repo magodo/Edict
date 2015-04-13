@@ -16,6 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.curdir, os.path.pardir)))
 
 import threading
 import numpy
+import time
 
 from edict.lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
 from edict.lib.speech.mfcc import mfcc
@@ -27,6 +28,7 @@ from kivy.app import App
 from kivy.clock import Clock
 import kivy.resources
 from kivy.uix.image import Image
+from kivy.uix.progressbar import ProgressBar
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.listview import ListItemButton
@@ -114,7 +116,6 @@ class SampleButton(Button):
 class WordButton(ListItemButton):
     pass
 
-
 #######################
 #       Word Screen
 #######################
@@ -155,7 +156,12 @@ class OfflineScreen(Screen):
 #       Personal Screen
 #######################
 class PersonalScreen(Screen):
+    app = ObjectProperty()
     text_input = ObjectProperty()
+
+    def __init__(self, **kargs):
+        super(PersonalScreen, self).__init__(**kargs)
+        self.match = None
 
     def refer(self, word, dikt):
         meaning = personal_refer(dikt, word)
@@ -167,24 +173,54 @@ class PersonalScreen(Screen):
             modview.open()
 
     def voice_refer(self):
-        personal_dict = EdictApp.get_running_app().root.personal_dict
-        target_feature = mfcc(self.wave)
-        match = None
-        score = numpy.inf
-        words = personal_dict.keys()
-        if len(words) == 0:
-            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+
+        personal_dict = self.app.root.personal_dict
+        personal_dict_is_empty = False if len(personal_dict.keys()) else True
+        # Run as thread
+        def _voice_refer():
+            """Store the matched word to attr::self.match"""
+            print "PID of '_voice_refer': ", threading.current_thread()
+            words = personal_dict.keys()
+            target_feature = mfcc(self.wave)
+            match = None
+            score = numpy.inf
+            # For loop will block everything in app.
+            # - it runs in the same thread as kivy's eventloop, so kivy can't do anything at all until it's finished.
+            for word in words:
+                progress.value += 1
+                if personal_dict[word].feature is not None:
+                    tmp_score = dtw(personal_dict[word].feature, target_feature)
+                    print "%s: %f" %(word, tmp_score)
+                    if tmp_score < score:
+                        score = tmp_score
+                        match = word
+            self.match = match
+            modview.dismiss()
+
+        if personal_dict_is_empty:
+            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
             modview.add_widget(Label(text = "No word in personal dictionary!"))
             modview.open()
-            return None
-        for word in words:
-            if personal_dict[word].feature is not None:
-                tmp_score = dtw(personal_dict[word].feature, target_feature)
-                print "%s: %f" %(word, tmp_score)
-                if tmp_score < score:
-                    score = tmp_score
-                    match = word
-        return match
+            return
+        else:
+            modview = ModalView(auto_dismiss = False, size_hint = (.85, .1))
+            progress = ProgressBar(value = 0, max = len(personal_dict.keys()), size_hint = (.8, .8))
+            modview.add_widget(progress)
+            # Create thread to do the matching job
+            t = threading.Thread(target = _voice_refer)
+            modview.open()
+            t.start()
+            # Main thread poll the match flag, do other things in meanwhile
+            Clock.schedule_interval(self._poll_flag, 0.1)
+
+    def _poll_flag(self, *args):
+        if self.match:
+            print "Get match flag!"
+            self.app.root.show_word(self.match, self.app.root.personal_dict[self.match].meaning)
+            self.match = None
+            # Unschedule polling event.
+            Clock.unschedule(self._poll_flag)
+
 
 
 #######################
