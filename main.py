@@ -23,8 +23,10 @@ from edict.lib.speech.dtw import dtw
 from edict.lib.speech.waveio import keep_record, echo
 
 import kivy
-import kivy.resources
 from kivy.app import App
+from kivy.clock import Clock
+import kivy.resources
+from kivy.uix.image import Image
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.listview import ListItemButton
@@ -44,6 +46,7 @@ kivy.require("1.8.0")
 
 ######## Popup #########
 class CollectPopup(Popup):
+    """Popup when click collect button, which contain a button to sample the voice."""
 
     def __init__(self, target, **kargs):
         super(CollectPopup, self).__init__(**kargs)
@@ -65,7 +68,6 @@ class ChoosePopup(Popup):
 
     def deny(self):
         self.dismiss()
-        self.last_popup.dismiss()
 
     def accept(self):
         self.dismiss()
@@ -205,11 +207,9 @@ class EdictRoot(ScreenManager):
         super(EdictRoot, self).__init__(**kargs)
         # Get configurations
         config = EdictApp.get_running_app().config
-            # offline
         offline_path = config.get("Offline", "Path")
         offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
         offline_dict_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".dict")][0]))
-            # personal
         personal_dict_path = config.get("Personal", "Path")
         # Load
         self.personal_dict_path = personal_dict_path
@@ -264,6 +264,12 @@ class EdictRoot(ScreenManager):
 #        App                                   #
 ################################################
 class EdictApp(App):
+
+    def build(self):
+        self.icon = "icon.npg"
+        # Create the root widget
+        self.edict = EdictRoot(app = self)
+        self.root = self.edict
 
     def build_config(self, config):
         # Font
