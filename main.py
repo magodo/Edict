@@ -162,6 +162,7 @@ class PersonalScreen(Screen):
     def __init__(self, **kargs):
         super(PersonalScreen, self).__init__(**kargs)
         self.match = None
+        self.event = threading.Event()
 
     def refer(self, word, dikt):
         meaning = personal_refer(dikt, word)
@@ -196,6 +197,7 @@ class PersonalScreen(Screen):
                         match = word
             self.match = match
             modview.dismiss()
+            self.event.set()
 
         if personal_dict_is_empty:
             modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
@@ -214,13 +216,12 @@ class PersonalScreen(Screen):
             Clock.schedule_interval(self._poll_flag, 0.1)
 
     def _poll_flag(self, *args):
-        if self.match:
-            print "Get match flag!"
-            self.app.root.show_word(self.match, self.app.root.personal_dict[self.match].meaning)
-            self.match = None
-            # Unschedule polling event.
-            Clock.unschedule(self._poll_flag)
-
+        if self.event.isSet():
+            if self.match:
+                self.app.root.show_word(self.match, self.app.root.personal_dict[self.match].meaning)
+                self.event.clear()
+                # Unschedule polling event.
+                Clock.unschedule(self._poll_flag)
 
 
 #######################
