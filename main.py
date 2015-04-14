@@ -294,8 +294,12 @@ class EdictRoot(ScreenManager):
         self.current = "word"
 
     def show_last_screen(self):
-        self.transition = FadeTransition()
-        self.current = self.last_screen
+        if self.last_screen == "word":
+            self.show_word(self.get_screen("word").word.text, self.get_screen("word").meaning.text)
+        else:
+            functions = [self.show_offline, self.show_personal, self.show_personal_manager]
+            index = ["offline", "personal", "manager"].index(self.last_screen)
+            functions[index]()
 
 ################################################
 #        App                                   #
