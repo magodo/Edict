@@ -18,7 +18,11 @@
 
 ############################# Screen #############################
 <OfflineScreen>:
+    app: app
     text_input: text_input
+    text: text_input.text
+    word_list: word_list
+
     BoxLayout:
         orientation: "vertical"
         BoxLayout:
@@ -33,13 +37,20 @@
                     focus: True
                     multiline: False
                     on_text_validate: root.refer(self.text, app.root.offline_dict)
-            Label:
-                text: "OfflineDict"
+            ListView:
+                id: word_list
+                adapter:
+                    ListAdapter(
+                    data = [],
+                    cls = main.WordButton
+                    )
         NaviBar
 
 <PersonalScreen>:
     app: app
     text_input: text_input
+    text: text_input.text
+    word_list: word_list
 
     BoxLayout:
         orientation: "vertical"
@@ -70,9 +81,14 @@
                     on_press: self.startRecord()
                     on_release: 
                         root.wave = self.stopRecord()
-                        match = root.voice_refer()
-            Label:
-                text: "Personal"
+                        root.voice_refer()
+            ListView:
+                id: word_list
+                adapter:
+                    ListAdapter(
+                    data = [],
+                    cls = main.WordButton
+                    )
         NaviBar
     
 <PersonalManagerScreen>:
@@ -138,7 +154,7 @@
             do_scroll_x: False
             Label:
                 id: meaning
-                font_name: resource_find(app.config.get("Font", "Path"))
+                font_name: resource_find(app.config.get("Font", "File"))
                 text_size: (self.parent.width, None)
                 size_hint: (None, None)
                 size: (self.parent.width, self.texture_size[1])
@@ -208,4 +224,7 @@
         on_release: app.open_settings()
 
 <WordButton>:
-    on_release: app.root.show_word(self.text, app.root.personal_dict[self.text].meaning)
+    deselected_color: [1,1,1,0]
+    selected_color: [1,1,1,0]
+    on_release: 
+        app.root.show_word(self.text, app.root.offline_dict[self.text])

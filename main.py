@@ -141,14 +141,38 @@ class WordScreen(Screen):
 #       Offline Screen
 #######################
 class OfflineScreen(Screen):
+
+    app = ObjectProperty()
     text_input = ObjectProperty()
+    text = StringProperty()
+    word_list = ObjectProperty()
+
+    def __init__(self, **kargs):
+
+        super(OfflineScreen, self).__init__(**kargs)
+        self.offline_dict_keys = []
+
+    def on_text(self, instance, text):
+
+        print text
+        # Initiate the list of dict keys in the first time
+        if not self.offline_dict_keys:
+            self.offline_dict_keys = self.app.root.offline_dict.keys()
+        if text is "":
+            candidates = []
+        else:
+            candidates = [w for w in self.offline_dict_keys if w.startswith(text)][:30]
+        del self.word_list.adapter.data[:]
+        self.word_list.adapter.data.extend(candidates)
+        self.word_list._trigger_reset_populate()
 
     def refer(self, word, dikt):
+
         meaning = offline_refer(dikt, word)
         if meaning:
             EdictApp.get_running_app().root.show_word(word, meaning)
         else:
-            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
             modview.add_widget(Label(text = "Word %s not found!"%word))
             modview.open()
 
@@ -156,20 +180,40 @@ class OfflineScreen(Screen):
 #       Personal Screen
 #######################
 class PersonalScreen(Screen):
+
     app = ObjectProperty()
     text_input = ObjectProperty()
+    text = StringProperty()
+    word_list = ObjectProperty()
 
     def __init__(self, **kargs):
+
         super(PersonalScreen, self).__init__(**kargs)
         self.match = None
         self.event = threading.Event()
+        self.personal_dict_keys = []
+
+    def on_text(self, instance, text):
+
+        print text
+        # Initiate the list of dict keys in the first time
+        if not self.personal_dict_keys:
+            self.personal_dict_keys = self.app.root.personal_dict.keys()
+        if text is "":
+            candidates = []
+        else:
+            candidates = [w for w in self.personal_dict_keys if w.startswith(text)][:30]
+        del self.word_list.adapter.data[:]
+        self.word_list.adapter.data.extend(candidates)
+        self.word_list._trigger_reset_populate()
 
     def refer(self, word, dikt):
+
         meaning = personal_refer(dikt, word)
         if meaning:
             EdictApp.get_running_app().root.show_word(word, meaning)
         else:
-            modview = ModalView(auto_dismiss = True, size_hint=(.5, .1))
+            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
             modview.add_widget(Label(text = "Word %s not found!"%word))
             modview.open()
 
@@ -244,10 +288,10 @@ class EdictRoot(ScreenManager):
         super(EdictRoot, self).__init__(**kargs)
         # Get configurations
         config = EdictApp.get_running_app().config
-        offline_path = config.get("Offline", "Path")
+        offline_path = config.get("Offline", "path")
         offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
         offline_dict_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".dict")][0]))
-        personal_dict_path = config.get("Personal", "Path")
+        personal_dict_path = config.get("Personal", "file")
         # Load
         self.personal_dict_path = personal_dict_path
         self.personal_dict, self.offline_dict = load(personal_dict_path, offline_idx_path, offline_dict_path)
@@ -277,7 +321,7 @@ class EdictRoot(ScreenManager):
         self.last_screen = self.current
         # Set list view
         del self.get_screen("manager").word_list.adapter.data[:]
-        self.get_screen("manager").word_list.adapter.data.extend(list(EdictApp.get_running_app().root.personal_dict.keys()))
+        self.get_screen("manager").word_list.adapter.data.extend(list(self.personal_dict.keys()))
         self.get_screen("manager").word_list._trigger_reset_populate()
         # switch
         self.transition = FadeTransition()
@@ -309,19 +353,18 @@ class EdictApp(App):
     def build(self):
         self.icon = "icon.npg"
         # Create the root widget
-        self.edict = EdictRoot(app = self)
-        self.root = self.edict
+        self.root = EdictRoot(app = self)
 
     def build_config(self, config):
         # Font
         font = os.path.abspath(os.path.join(os.path.curdir, "fonts", "DroidSansFallback.ttf"))
-        config.setdefaults("Font", {"Path": font})
+        config.setdefaults("Font", {"file": font})
         # Offline
         landao_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "langdao-ec-gb"))
-        config.setdefaults("Offline", {"Path": landao_dict})
+        config.setdefaults("Offline", {"path": landao_dict})
         # Personal
-        personal_dict = os.path.abspath(os.path.join(os.path.curdir, "personal_dict.pkl"))
-        config.setdefaults("Personal", {"Path": personal_dict})
+        personal_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "personal_dict", "personal_dict.pkl"))
+        config.setdefaults("Personal", {"file": personal_dict})
 
     def build_settings(self, settings):
         settings.add_json_panel("Edict Settings", self.config, "settings.json")
