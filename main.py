@@ -11,17 +11,18 @@
 import os
 import sys
 
-# Configure sys.path to include edict package
-sys.path.append(os.path.abspath(os.path.join(os.path.curdir, os.path.pardir)))
-
 import threading
 import numpy
 import time
 
-from edict.lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
-from edict.lib.speech.mfcc import mfcc
-from edict.lib.speech.dtw import dtw
-from edict.lib.speech.waveio import keep_record, echo
+from lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
+from lib.speech.mfcc import mfcc
+from lib.speech.dtw import dtw
+
+# For android audio recording
+from audiostream import get_input, get_output, get_input_sources, AudioSample
+import time
+import binascii
 
 import kivy
 from kivy.app import App
@@ -56,7 +57,14 @@ class CollectPopup(Popup):
         self.wave = None
 
     def popupChoose(self):
-        echo(self.wave)
+        # Output stream initialize
+        self.stream = get_output(channels=1, buffersize=1024, rate=8000)
+        self.sample = AudioSample()
+        self.stream.add_sample(self.sample)
+        #Echo
+        self.sample.stop()
+        self.sample.play()
+        self.sample.write(self.bin_data)
         p = ChoosePopup(wave = self.wave, target = self.target, last_popup = self)
         p.open()
 
@@ -89,29 +97,31 @@ class ChoosePopup(Popup):
 class SampleButton(Button):
 
     def __init__(self, **kargs):
-        self.stop_dict = {"flag": False}
-        self.is_stopped = False
-        self.wave = None
         super(SampleButton, self).__init__(**kargs)
 
-    def startRecord(self):
-        def t_startRecord():
-            print "recording..."
-            self.wave = keep_record(self.stop_dict)
-            self.is_stopped = True
-        t = threading.Thread(target = t_startRecord)
-        t.start()
+    def startRecord(self, channels=1, encoding=16, rate=8000):
+        def mic_callback(buf):
+            print "got data", len(buf)
+            frames.append(buf)
+        frames = []
+        # Need to set buffersize
+        mic = get_input(callback=mic_callback, channels=channels, rate=rate, encoding=encoding, buffersize=1024)
+        mic.start()
+        print "MIC started..."
+        time.sleep(.5)
+        mic.poll()
+        time.sleep(.5)
+        mic.poll()
 
-    def stopRecord(self):
-        print "stopping..."
-        self.stop_dict['flag'] = True
-        while not self.is_stopped:
-            pass
-        # Prepare for next record
-        self.stop_dict['flag'] = False
-        self.is_stopped = False
-        # Return wave data
-        return self.wave
+        mic.stop()
+        print "MIC ended..."
+
+        # Remove the prepending Inpulse voice
+        bin_data = ''.join(frames)[200:]
+        wave = numpy.array([int(binascii.b2a_hex(i), 16) for i in bin_data])
+        # Return both pure data and binary data string for speaker.
+        return (wave, bin_data)
+
 
 class WordButton(ListItemButton):
     pass

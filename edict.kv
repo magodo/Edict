@@ -78,10 +78,12 @@
                     text: "Voice"
                     background_normal: "graphics/button_normal.png"
                     background_down: "graphics/button_down.png"
-                    on_press: self.startRecord()
-                    on_release: 
-                        root.wave = self.stopRecord()
+                    on_press: 
+                        root.wave = self.startRecord()[0]
                         root.voice_refer()
+                    #on_release: 
+                    #    root.wave = self.stopRecord()
+                    #    root.voice_refer()
             ListView:
                 id: word_list
                 adapter:
@@ -171,10 +173,12 @@
             text: "Record"
             background_normal: "graphics/button_normal.png"
             background_down: "graphics/button_down.png"
-            on_press: self.startRecord()
-            on_release: 
-                root.wave = self.stopRecord()
+            on_press: 
+                root.wave, root.bin_data = self.startRecord()
                 root.popupChoose()
+            #on_release: 
+            #    root.wave = self.stopRecord()
+            #    root.popupChoose()
         Button:
             size_hint: (.3, .2)
             pos_hint: {"center_x": .8, "center_y": .3}

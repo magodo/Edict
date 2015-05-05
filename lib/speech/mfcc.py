@@ -5,8 +5,6 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.join(os.path.curdir, os.path.pardir), os.path.pardir)))
-
 import numpy as np
 #from scipy.fftpack import dct
 from my_dct import my_dct

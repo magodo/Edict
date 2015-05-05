@@ -8,7 +8,6 @@
 # Description:
 #########################################################################
 
-from scipy.fftpack import dct
 import numpy as np
 import math
 
@@ -45,6 +44,8 @@ def my_dct(array, axis = -1, norm=False):
         raise TypeError("my_dct: axis is not in [-1, 0, 1]")
 
 if __name__ == "__main__":
+
+    from scipy.fftpack import dct
 
     #~~~~~~~~~~~~~~~~~
     # 1-D

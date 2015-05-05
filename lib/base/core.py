@@ -12,7 +12,7 @@
 #########################################################################
 
 import pickle
-import edict.lib.base.dparser as dparser
+import dparser as dparser
 import os
 
 ###########################################################
