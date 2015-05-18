@@ -12,7 +12,7 @@
 #########################################################################
 
 import pickle
-import edict.lib.base.dparser as dparser
+import dparser
 import os
 
 ###########################################################
@@ -72,13 +72,12 @@ def dump_personal_dict(p_dict, personal_dict_path):
 ###########################
 #       load              #
 ###########################
-def load(personal_dict_path, offline_idx_path, offline_dict_path):
-    """Load both offline and personal dictionaries.
+def load(personal_dict_path, offline_idx_path):
+    """Load both offline idx and personal dictionaries.
     :param personal_dict_path: path to the .pkl file representing personal dictionary.
     :param offline_idx_path: path to the offline dictionary .idx file.
-    :param offline_dict_path: path to the offline dictionary .dict file.
 
-    :returns: tuple containing two dictionary type objects, representing both dictionaries' content.
+    :returns: tuple containing personal_dict and offline index dictionary.
     """
     # ------------------------
     # Load personal dictionary
@@ -87,8 +86,8 @@ def load(personal_dict_path, offline_idx_path, offline_dict_path):
     # ------------------------
     # Load offline dictionary
     # -----------------------
-    offline_dict = load_offline_dict(offline_idx_path, offline_dict_path)
-    return (personal_dict, offline_dict)
+    idx_dict = load_offline_dict(offline_idx_path)
+    return (personal_dict, idx_dict)
 
 def load_personal_dict(personal_dict_path):
     """Load personal dictionary.
@@ -112,45 +111,29 @@ def load_personal_dict(personal_dict_path):
         print "---- Personal dictionary creation completed!"
         return {}
 
-def load_offline_dict(offline_idx_path, offline_dict_path):
-    """Load offline dictionary.
+def load_offline_dict(offline_idx_path):
+    """Load offline index dictionary.
     :param offline_idx_path: path to the offline dictionary .idx file.
-    :param offline_dict_path: path to the offline dictionary .dict file.
-    :returns: python dictionary object representing offline dictionary's content if it exsists, or return None.
+    :returns: python dictionary object with 'word-index' pair.
     """
-    offline_parsed_dict_path = offline_idx_path[:offline_idx_path.find(".")]+".pkl"
-    print "- Loading offline dictionary: %s..." % offline_parsed_dict_path
+    print "- Loading offline index dictionary: %s..." % offline_idx_path
     try:
-        with open(offline_parsed_dict_path, "rb") as f:
-            offline_dict = pickle.load(f)
-            print "- Loading offline dictionary: %s completed!" % offline_parsed_dict_path
-            return offline_dict
+        idx_dict = dparser.create_idx_dict(offline_idx_path)
+        print "- Loading offline index dictionary: %s completed!" % offline_idx_path
+        return idx_dict
     except IOError:
-        try:
-            print "---- Offline dictionary is not parsed!\n---- Parsing...."
-            offline_dict = dparser.dict_parser(offline_idx_path, offline_dict_path)
-            f = open(offline_parsed_dict_path, 'wb')
-            pickle.dump(offline_dict, f, 1)
-            f.close()
-            print "---- Offline dictionary parseing completed!"
-            print "- Loading offline dictionary: %s completed!" % offline_parsed_dict_path
-            return offline_dict
-        except IOError:
-            print "- Offline dictionary not found!"
-            return None
+        print "- Offline index dictionary not found!"
+        return None
 
 ###########################
 #     Refer               #
 ###########################
-def offline_refer(off_dict, word):
-    """Refer word in offline dictionary.
-    :param off_dict: python object representing offline dictionary.
-    :param word: word to refere.
-    :returns: Meaning of the word.
-    """
+def offline_refer(dict_file, idx_dict, word):
+    """Refer word in offline dictionary."""
 
-    if word.strip() in off_dict.keys():
-        return off_dict[word]
+    word = word.strip()
+    if word in idx_dict.keys():
+        return dparser.refer_word(dict_file, idx_dict, word)
     else:
         return False
 
@@ -166,3 +149,10 @@ def personal_refer(p_dict, word):
         return False
 
 
+if __name__ == "__main__":
+
+    OFFLINE_IDX_PATH = "../../dict_collections/langdao-ec-gb/langdao-ec-gb.idx"
+    OFFLINE_DICT_PATH = "../../dict_collections/langdao-ec-gb/langdao-ec-gb.dict"
+    PERSONAL_DICT_PATH = "../../dict_collections/personal_dict/personal_dict.pkl"
+    p_dict, idx_dict = load(PERSONAL_DICT_PATH, OFFLINE_IDX_PATH)
+    print offline_refer(OFFLINE_DICT_PATH, idx_dict, "python")

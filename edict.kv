@@ -36,7 +36,7 @@
                     id: text_input
                     focus: True
                     multiline: False
-                    on_text_validate: root.refer(self.text, app.root.offline_dict)
+                    on_text_validate: root.refer(self.text, app.root.offline_dict_path)
             ListView:
                 id: word_list
                 adapter:
@@ -227,4 +227,4 @@
     deselected_color: [1,1,1,0]
     selected_color: [1,1,1,0]
     on_release: 
-        app.root.show_word(self.text, app.root.offline_dict[self.text])
+        app.root.show_word(self.text, flag=0)
