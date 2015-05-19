@@ -26,7 +26,9 @@ Word Imagin:
 DTW:
     Algorithm modify
 
-
+##Build:
+./distribute.sh -m "numpy kivy"
+./build.py --dir <dir> --name Edict --package org.edict --version 1.0 --orientation portrait --permission RECORD_AUDIO debug installd
 
 
 
