@@ -163,7 +163,7 @@ class OfflineScreen(Screen):
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.offline_dict_keys[text[0].lower()] if w.startswith(text)]
+            candidates = [w for w in self.offline_dict_keys[text[0].lower()] if w.startswith(text)][:50]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
@@ -199,7 +199,7 @@ class PersonalScreen(Screen):
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.personal_dict_keys[text[0].lower()] if w.startswith(text)]
+            candidates = [w for w in self.personal_dict_keys[text[0].lower()] if w.startswith(text)][:50]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
