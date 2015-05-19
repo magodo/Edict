@@ -34,9 +34,10 @@
                 height: "40dp"
                 TextInput:
                     id: text_input
-                    focus: True
+                    font_size: "20sp"
                     multiline: False
                     on_text_validate: root.refer(self.text, app.root.offline_dict_path)
+                    
             ListView:
                 id: word_list
                 adapter:
@@ -71,8 +72,10 @@
                 TextInput:
                     id: text_input
                     size_hint_x: 2
+                    font_size: "20sp"
                     multiline: False
                     on_text_validate: root.refer(self.text, app.root.personal_dict)
+
                 SampleButton: 
                     size_hint_x: 1
                     text: "Voice"
@@ -161,7 +164,7 @@
             do_scroll_x: False
             Label:
                 id: meaning
-                font_name: resource_find(app.config.get("Font", "File"))
+                font_name: resource_find(app.config.get("Font", "file"))
                 text_size: (self.parent.width, None)
                 size_hint: (None, None)
                 size: (self.parent.width, self.texture_size[1])
@@ -241,3 +244,9 @@
     selected_color: [1,1,1,0]
     on_release: 
         app.root.show_word(self.text, flag = 0)
+    font_size: "20sp"
+    halign: "center"
+    size_hint: (None, None)
+    height: app.window.height * 0.1
+    width: app.window.width
+    text_size: (self.width, self.height)

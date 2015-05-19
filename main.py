@@ -26,6 +26,7 @@ import time
 import binascii
 
 import kivy
+from kivy.logger import Logger
 from kivy.app import App
 from kivy.clock import Clock
 import kivy.resources
@@ -44,6 +45,8 @@ from kivy.uix.modalview import ModalView
 from kivy.properties import ObjectProperty, StringProperty, DictProperty
 from kivy.graphics import Color, Rectangle
 from kivy.uix.screenmanager import FadeTransition
+from kivy.core.window import Window
+from kivy.metrics import dp
 
 kivy.require("1.8.0")
 
@@ -163,6 +166,10 @@ class OfflineScreen(Screen):
         super(OfflineScreen, self).__init__(**kargs)
         self.offline_dict_keys = collections.defaultdict(list)
 
+    def on_touch_move(self, touch):
+        if touch.pos[1] < self.app.window.height - dp(self.text_input.parent.height):
+            EdictApp.get_running_app().window.release_all_keyboards()
+
     def on_text(self, instance, text):
 
         print text
@@ -179,7 +186,7 @@ class OfflineScreen(Screen):
         self.word_list._trigger_reset_populate()
 
     def refer(self, word, dikt):
-       EdictApp.get_running_app().root.show_word(word, flag = 0)
+        EdictApp.get_running_app().root.show_word(word, flag = 0)
 
 #######################
 #       Personal Screen
@@ -197,6 +204,10 @@ class PersonalScreen(Screen):
         self.match = None
         self.event = threading.Event()
         self.personal_dict_keys = collections.defaultdict(list)
+
+    def on_touch_move(self, touch):
+        if touch.pos[1] < self.app.window.height - dp(self.text_input.parent.height):
+            EdictApp.get_running_app().window.release_all_keyboards()
 
     def on_text(self, instance, text):
 
@@ -294,10 +305,12 @@ class EdictRoot(ScreenManager):
         offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
         offline_dict_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".dict")][0]))
         personal_dict_path = config.get("Personal", "file")
+
         # Load
         self.personal_dict_path = personal_dict_path
         self.offline_dict_path = offline_dict_path
         self.personal_dict, self.offline_idx_dict = load(personal_dict_path, offline_idx_path)
+
 
 
     def show_offline(self):
@@ -367,8 +380,15 @@ class EdictRoot(ScreenManager):
 ################################################
 class EdictApp(App):
 
+    def on_start(self):
+        Logger.info("APP: I'm alive!")
+
     def build(self):
-        self.icon = "icon.npg"
+        self.icon = "icon.png"
+
+        # Get window
+        self.window = Window
+
         # Create the root widget
         self.root = EdictRoot(app = self)
 
