@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.curdir, os.path.pardir)))
 import threading
 import numpy
 import time
+import collections
 
 from edict.lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
 from edict.lib.speech.mfcc import mfcc
@@ -150,18 +151,19 @@ class OfflineScreen(Screen):
     def __init__(self, **kargs):
 
         super(OfflineScreen, self).__init__(**kargs)
-        self.offline_dict_keys = []
+        self.offline_dict_keys = collections.defaultdict(list)
 
     def on_text(self, instance, text):
 
         print text
         # Initiate the list of dict keys in the first time
         if not self.offline_dict_keys:
-            self.offline_dict_keys = self.app.root.offline_idx_dict.keys()
+            for word in self.app.root.offline_idx_dict.keys():
+                self.offline_dict_keys[word[0].lower()].append(word)
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.offline_dict_keys if w.startswith(text)]
+            candidates = [w for w in self.offline_dict_keys[text[0].lower()] if w.startswith(text)]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
@@ -184,18 +186,20 @@ class PersonalScreen(Screen):
         super(PersonalScreen, self).__init__(**kargs)
         self.match = None
         self.event = threading.Event()
-        self.personal_dict_keys = []
+        self.personal_dict_keys = collections.defaultdict(list)
 
     def on_text(self, instance, text):
 
         print text
         # Initiate the list of dict keys in the first time
         if not self.personal_dict_keys:
-            self.personal_dict_keys = self.app.root.personal_dict.keys()
+            # classify to 26 classes
+            for word in self.app.root.personal_dict.keys():
+                self.personal_dict_keys[word[0].lower()].append(word)
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.personal_dict_keys if w.startswith(text)][:30]
+            candidates = [w for w in self.personal_dict_keys[text[0].lower()] if w.startswith(text)]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
