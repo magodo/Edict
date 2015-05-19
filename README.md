@@ -17,8 +17,6 @@ Audio:
 edict.ini:
     Should be removed before compile. (Should overcome this issue!)
 
-SampleButton should be defined when on_release!(rather than on_press)
-    
 Match process:
     Importve
 

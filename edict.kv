@@ -78,12 +78,17 @@
                     text: "Voice"
                     background_normal: "graphics/button_normal.png"
                     background_down: "graphics/button_down.png"
-                    on_press: 
+                    on_release: 
                         root.wave = self.startRecord()[0]
                         root.voice_refer()
+                    # For continuous record
+                    #on_press: 
+                    #    root.wave = self.startRecord()[0]
+                    #    root.voice_refer()
                     #on_release: 
                     #    root.wave = self.stopRecord()
                     #    root.voice_refer()
+
             ListView:
                 id: word_list
                 adapter:
@@ -173,9 +178,13 @@
             text: "Record"
             background_normal: "graphics/button_normal.png"
             background_down: "graphics/button_down.png"
-            on_press: 
+            on_release: 
                 root.wave, root.bin_data = self.startRecord()
                 root.popupChoose()
+            # For continuous record
+            #on_press: 
+            #    root.wave, root.bin_data = self.startRecord()
+            #    root.popupChoose()
             #on_release: 
             #    root.wave = self.stopRecord()
             #    root.popupChoose()
@@ -185,7 +194,7 @@
             text: "Cancel"
             background_normal: "graphics/button_normal.png"
             background_down: "graphics/button_down.png"
-            on_press: root.dismiss()
+            on_release: root.dismiss()
 
 <ChoosePopup>:
     title: "Sample accept?"
