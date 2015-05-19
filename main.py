@@ -14,6 +14,7 @@ import sys
 import threading
 import numpy
 import time
+import collections
 
 from lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
 from lib.speech.mfcc import mfcc
@@ -160,31 +161,25 @@ class OfflineScreen(Screen):
     def __init__(self, **kargs):
 
         super(OfflineScreen, self).__init__(**kargs)
-        self.offline_dict_keys = []
+        self.offline_dict_keys = collections.defaultdict(list)
 
     def on_text(self, instance, text):
 
         print text
-        # Initiate the list of dict keys in the first time
         if not self.offline_dict_keys:
-            self.offline_dict_keys = self.app.root.offline_dict.keys()
+            # Initiate the list of dict keys in the first time(classify to classes)
+            for word in self.app.root.offline_idx_dict.keys():
+                self.offline_dict_keys[word[0]].append(word)
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.offline_dict_keys if w.startswith(text)][:30]
+            candidates = [w for w in self.offline_dict_keys[text[0]] if w.startswith(text)][:50]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
 
     def refer(self, word, dikt):
-
-        meaning = offline_refer(dikt, word)
-        if meaning:
-            EdictApp.get_running_app().root.show_word(word, meaning)
-        else:
-            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
-            modview.add_widget(Label(text = "Word %s not found!"%word))
-            modview.open()
+       EdictApp.get_running_app().root.show_word(word, flag = 0)
 
 #######################
 #       Personal Screen
@@ -201,31 +196,26 @@ class PersonalScreen(Screen):
         super(PersonalScreen, self).__init__(**kargs)
         self.match = None
         self.event = threading.Event()
-        self.personal_dict_keys = []
+        self.personal_dict_keys = collections.defaultdict(list)
 
     def on_text(self, instance, text):
 
         print text
-        # Initiate the list of dict keys in the first time
         if not self.personal_dict_keys:
-            self.personal_dict_keys = self.app.root.personal_dict.keys()
+            # Initiate the list of dict keys in the first time(classify to classes)
+            for word in self.app.root.personal_dict.keys():
+                self.personal_dict_keys[word[0]].append(word)
+
         if text is "":
             candidates = []
         else:
-            candidates = [w for w in self.personal_dict_keys if w.startswith(text)][:30]
+            candidates = [w for w in self.personal_dict_keys[text[0]] if w.startswith(text)][:50]
         del self.word_list.adapter.data[:]
         self.word_list.adapter.data.extend(candidates)
         self.word_list._trigger_reset_populate()
 
     def refer(self, word, dikt):
-
-        meaning = personal_refer(dikt, word)
-        if meaning:
-            EdictApp.get_running_app().root.show_word(word, meaning)
-        else:
-            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
-            modview.add_widget(Label(text = "Word %s not found!"%word))
-            modview.open()
+        EdictApp.get_running_app().root.show_word(word, flag = 1)
 
     def voice_refer(self):
 
@@ -272,10 +262,10 @@ class PersonalScreen(Screen):
     def _poll_flag(self, *args):
         if self.event.isSet():
             if self.match:
-                self.app.root.show_word(self.match, self.app.root.personal_dict[self.match].meaning)
                 self.event.clear()
                 # Unschedule polling event.
                 Clock.unschedule(self._poll_flag)
+                self.app.root.show_word(self.match, flag = 1)
 
 
 #######################
@@ -290,7 +280,9 @@ class PersonalManagerScreen(Screen):
 class EdictRoot(ScreenManager):
     personal_dict_path = StringProperty()
     personal_dict = ObjectProperty()
-    offline_dict = ObjectProperty()
+    offline_dict_path = ObjectProperty()
+    offline_idx_dict = ObjectProperty()
+
 
     last_screen = ObjectProperty()
 
@@ -304,7 +296,9 @@ class EdictRoot(ScreenManager):
         personal_dict_path = config.get("Personal", "file")
         # Load
         self.personal_dict_path = personal_dict_path
-        self.personal_dict, self.offline_dict = load(personal_dict_path, offline_idx_path, offline_dict_path)
+        self.offline_dict_path = offline_dict_path
+        self.personal_dict, self.offline_idx_dict = load(personal_dict_path, offline_idx_path)
+
 
     def show_offline(self):
         # save last screen
@@ -337,15 +331,28 @@ class EdictRoot(ScreenManager):
         self.transition = FadeTransition()
         self.current = "manager"
 
-    def show_word(self, word, meaning):
+    def show_word(self, word, flag):
+        """flag: 0 - offline; 1 - personal"""
         # save last screen
         self.last_screen = self.current
-        # modify content
-        self.get_screen("word").word.text = word
-        self.get_screen("word").meaning.text = meaning
-        # switch
-        self.transition = FadeTransition()
-        self.current = "word"
+        # get meaning
+        if not flag:
+            meaning = offline_refer(self.offline_dict_path, self.offline_idx_dict, word)
+        else:
+            meaning = personal_refer(self.personal_dict, word)
+        # Action
+        if meaning:
+            # modify content
+            self.get_screen("word").word.text = word
+            self.get_screen("word").meaning.text = meaning
+            # switch
+            self.transition = FadeTransition()
+            self.current = "word"
+        else:
+            modview = ModalView(auto_dismiss = True, size_hint=(.85, .1))
+            modview.add_widget(Label(text = "Word %s not found!"%word))
+            modview.open()
+
 
     def show_last_screen(self):
         if self.last_screen == "word":
