@@ -102,7 +102,8 @@
         NaviBar
     
 <PersonalManagerScreen>:
-    word_list: word_list
+    edit_listview: edit_listview
+    edit_button: edit_button
 
     BoxLayout:
         orientation: "vertical"
@@ -116,21 +117,29 @@
                 text: "Back"
                 background_normal: "graphics/button_normal.png"
                 background_down: "graphics/button_down.png"
-                on_release: app.root.show_personal()
+                on_release: 
+                    root.edit_button.flag = 0
+                    app.root.show_personal()
             Label:
                 size_hint_x: 3
                 text: "My Personal Dictionary"
-            Button: 
+            EditButton: 
+                edit_listview: edit_listview
+                app: app
+                flag: 0
+                id: edit_button
                 size_hint_x: 1
                 text: "Edit"
                 background_normal: "graphics/button_normal.png"
                 background_down: "graphics/button_down.png"
         ListView:
-            id: word_list
+            id: edit_listview
             adapter:
                 ListAdapter(
+                args_converter = root.args_converter,
                 data = [],
-                cls = main.WordButton
+                cls = main.WordButton,
+                selection_mode = "none"
                 )
 
 <WordScreen>:
@@ -159,12 +168,13 @@
                 background_normal: "graphics/button_normal.png"
                 background_down: "graphics/button_down.png"
                 on_release: 
-                    root.collect(word.text, meaning.text)
+                    root.collect_desktop(word.text, meaning.text)
+                    #root.collect(word.text, meaning.text)
         ScrollView:
             do_scroll_x: False
             Label:
                 id: meaning
-                font_name: resource_find(app.config.get("Font", "file"))
+                font_name: resource_find(app.font)
                 text_size: (self.parent.width, None)
                 size_hint: (None, None)
                 size: (self.parent.width, self.texture_size[1])
@@ -241,9 +251,7 @@
 
 <WordButton>:
     deselected_color: [1,1,1,0]
-    selected_color: [1,1,1,0]
-    on_release: 
-        app.root.show_word(self.text, flag = 0)
+    selected_color: [1,1,1,1]
     font_size: "20sp"
     halign: "center"
     size_hint: (None, None)

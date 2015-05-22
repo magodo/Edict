@@ -16,7 +16,7 @@ import numpy
 import time
 import collections
 
-from lib.base.core import BaseDict, dump_personal_dict, load, load_personal_dict, offline_refer, personal_refer
+from lib.base.core import BaseDict, dump_personal_dict, load, load_offline_dict, load_personal_dict, offline_refer, personal_refer
 from lib.speech.mfcc import mfcc
 from lib.speech.dtw import dtw
 
@@ -42,7 +42,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.modalview import ModalView
-from kivy.properties import ObjectProperty, StringProperty, DictProperty
+from kivy.properties import ObjectProperty, StringProperty, DictProperty, NumericProperty
 from kivy.graphics import Color, Rectangle
 from kivy.uix.screenmanager import FadeTransition
 from kivy.core.window import Window
@@ -88,11 +88,9 @@ class ChoosePopup(Popup):
         self.last_popup.dismiss()
         # Get personal dict (path)
         personal_dict = EdictApp.get_running_app().root.personal_dict
-        personal_dict_path = EdictApp.get_running_app().root.personal_dict_path
         # Calculate MFCC
         self.target.feature = mfcc(self.wave)
         personal_dict[self.target.word] = self.target
-        dump_personal_dict(personal_dict, personal_dict_path)
         mod_view_success = ModalView(auto_dismiss = True, size_hint=(.5, .1))
         mod_view_success.add_widget(Label(text="Successfully collect!"))
         mod_view_success.open()
@@ -127,8 +125,49 @@ class SampleButton(Button):
         return (wave, bin_data)
 
 
+class EditButton(Button):
+    edit_listview = ObjectProperty()
+    flag = NumericProperty() #0: EDIT; 1: REMOVE
+    app = ObjectProperty()
+
+    def __init__(self, **kargs):
+        super(EditButton, self).__init__(**kargs)
+
+    def on_flag(self, *args):
+        if self.flag is 0:
+            self.text = "Edit"
+            self.edit_listview.adapter.selection_mode = "none"
+        else:
+            self.text = "Remove"
+            self.edit_listview.adapter.selection_mode = "multiple"
+
+    def on_release(self, *args):
+        if self.flag is 0:
+            # EDIT -> REMOVE
+            self.flag = 1
+        else:
+            # REMOVE -> EDIT
+            self.remove_words(self.edit_listview.adapter.selection)
+            self.flag = 0
+
+    def remove_words(self, stuff):
+        print "EditButton:: remove stuff: ", stuff
+        for i in stuff:
+            del self.app.root.personal_dict[i.text]
+        # Update list view
+        del self.edit_listview.adapter.data[:]
+        self.edit_listview.adapter.data.extend(list(self.app.root.personal_dict.keys()))
+        self.edit_listview._trigger_reset_populate()
+
+
+
 class WordButton(ListItemButton):
-    pass
+    def on_release(self, *args):
+        if (EdictApp.get_running_app().root.current is "manager") and \
+           (EdictApp.get_running_app().root.current_screen.edit_button.flag is 1):
+            pass
+        else:
+            EdictApp.get_running_app().root.show_word(self.text, flag = 0)
 
 #######################
 #       Word Screen
@@ -149,6 +188,13 @@ class WordScreen(Screen):
             target.meaning = meaning
             # Pop up voice button to record
             CollectPopup(target).open()
+
+    def collect_desktop(self, word, meaning):
+        personal_dict = EdictApp.get_running_app().root.personal_dict
+        target = BaseDict(word)
+        target.meaning = meaning
+        personal_dict[word] = target
+
 
 
 #######################
@@ -172,7 +218,7 @@ class OfflineScreen(Screen):
 
     def on_text(self, instance, text):
 
-        print text
+        print "Offline:", text
         if not self.offline_dict_keys:
             # Initiate the list of dict keys in the first time(classify to classes)
             for word in self.app.root.offline_idx_dict.keys():
@@ -211,10 +257,12 @@ class PersonalScreen(Screen):
 
     def on_text(self, instance, text):
 
-        print text
+        print "Personal: ", text
         if not self.personal_dict_keys:
+            print "Personal: Initiating self.personal_dict_keys..."
             # Initiate the list of dict keys in the first time(classify to classes)
             for word in self.app.root.personal_dict.keys():
+                print "Personal: Adding word: %s to personal_dict_keys"%text
                 self.personal_dict_keys[word[0]].append(word)
 
         if text is "":
@@ -283,35 +331,64 @@ class PersonalScreen(Screen):
 #       Manager Screen
 #######################
 class PersonalManagerScreen(Screen):
-    word_list = ObjectProperty()
+    edit_listview = ObjectProperty()
+    edit_button = ObjectProperty()
+
+    def args_converter(self, index, text):
+        ret = {"text": text}
+        return ret
+
+
+
 
 #######################
 #       Root          #
 #######################
 class EdictRoot(ScreenManager):
-    personal_dict_path = StringProperty()
-    personal_dict = ObjectProperty()
-    offline_dict_path = ObjectProperty()
-    offline_idx_dict = ObjectProperty()
-
+    personal_dict = DictProperty()
+    offline_idx_dict = DictProperty()
 
     last_screen = ObjectProperty()
 
     def __init__(self, **kargs):
         super(EdictRoot, self).__init__(**kargs)
         # Get configurations
-        config = EdictApp.get_running_app().config
-        offline_path = config.get("Offline", "path")
-        offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
-        offline_dict_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".dict")][0]))
-        personal_dict_path = config.get("Personal", "file")
+        #config = EdictApp.get_running_app().config
+        #offline_path = config.get("Offline", "path")
+        offline_path = EdictApp.get_running_app().landao_dict
+        self.offline_idx_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".idx")][0]))
+        self.offline_dict_path = os.path.abspath(os.path.join(offline_path, [i for i in os.listdir(offline_path) if i.endswith(".dict")][0]))
+        #self.personal_dict_path = config.get("Personal", "file")
+        self.personal_dict_path = EdictApp.get_running_app().personal_dict
 
-        # Load
-        self.personal_dict_path = personal_dict_path
-        self.offline_dict_path = offline_dict_path
-        self.personal_dict, self.offline_idx_dict = load(personal_dict_path, offline_idx_path)
+        # load offline index(dict)
+        self.offline_idx_dict = load_offline_dict(self.offline_idx_path)
 
+        # set last_keys
+        self.last_keys = []
 
+        # set load status
+        self.loaded = 0
+
+    def on_personal_dict(self, inst, p_dict):
+        if not self.loaded:
+            return
+        # Dump to personal_dict_path
+        dump_personal_dict(dict(self.personal_dict), self.personal_dict_path)
+        print "dumping persona_dict..."
+
+        # Update personal_dict_keys in PersonalScreen
+        self.current_keys = self.personal_dict.keys()
+        increment = len(self.current_keys) - len(self.last_keys)
+        diff = set(self.current_keys) - set(self.last_keys) if set(self.current_keys) - set(self.last_keys) else set(self.last_keys) - set(self.current_keys)
+        diff = list(diff)[0]
+        if increment is 1:
+            self.get_screen("personal").personal_dict_keys[diff[0]].append(diff)
+            print "ROOT: add word: %s to personal_dict_keys"%diff
+        elif increment is -1:
+            self.get_screen("personal").personal_dict_keys[diff[0]].remove(diff)
+            print "ROOT: rm word: %s from personal_dict_keys"%diff
+        self.last_keys = self.current_keys
 
     def show_offline(self):
         # save last screen
@@ -324,6 +401,14 @@ class EdictRoot(ScreenManager):
         self.current = "offline"
 
     def show_personal(self):
+        if not self.personal_dict:
+            # First time: load personal dict
+            self.personal_dict = load_personal_dict(self.personal_dict_path)
+            self.last_keys = self.personal_dict.keys()
+
+            # set loaded
+            self.loaded = 1
+
         # save last screen
         self.last_screen = self.current
         # set focus
@@ -337,9 +422,9 @@ class EdictRoot(ScreenManager):
         # save last screen
         self.last_screen = self.current
         # Set list view
-        del self.get_screen("manager").word_list.adapter.data[:]
-        self.get_screen("manager").word_list.adapter.data.extend(list(self.personal_dict.keys()))
-        self.get_screen("manager").word_list._trigger_reset_populate()
+        del self.get_screen("manager").edit_listview.adapter.data[:]
+        self.get_screen("manager").edit_listview.adapter.data.extend(list(self.personal_dict.keys()))
+        self.get_screen("manager").edit_listview._trigger_reset_populate()
         # switch
         self.transition = FadeTransition()
         self.current = "manager"
@@ -394,17 +479,17 @@ class EdictApp(App):
 
     def build_config(self, config):
         # Font
-        font = os.path.abspath(os.path.join(os.path.curdir, "fonts", "DroidSansFallback.ttf"))
-        config.setdefaults("Font", {"file": font})
+        self.font = os.path.abspath(os.path.join(os.path.curdir, "fonts", "DroidSansFallback.ttf"))
+        #config.setdefaults("Font", {"file": font})
         # Offline
-        landao_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "langdao-ec-gb"))
-        config.setdefaults("Offline", {"path": landao_dict})
+        self.landao_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "langdao-ec-gb"))
+        #config.setdefaults("Offline", {"path": landao_dict})
         # Personal
-        personal_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "personal_dict", "personal_dict.pkl"))
-        config.setdefaults("Personal", {"file": personal_dict})
+        self.personal_dict = os.path.abspath(os.path.join(os.path.curdir, "dict_collections", "personal_dict", "personal_dict.pkl"))
+        #config.setdefaults("Personal", {"file": personal_dict})
 
-    def build_settings(self, settings):
-        settings.add_json_panel("Edict Settings", self.config, "settings.json")
+    #def build_settings(self, settings):
+    #    settings.add_json_panel("Edict Settings", self.config, "settings.json")
 
 if __name__ == "__main__":
     EdictApp().run()
